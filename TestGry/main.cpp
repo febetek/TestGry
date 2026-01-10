@@ -17,7 +17,7 @@ using namespace sf;
 
 enum WeaponId {
     WHIP, MAGIC_WAND, KNIFE, AXE, BOOMERANG,
-    BIBLE, FIRE_WAND, GARLIC, HOLY_WATER, RUNETRACER, LIGHTNING
+    BIBLE, FIRE_WAND, GARLIC, HOLY_WATER, LIGHTNING
 };
 
 enum PassiveId {
@@ -25,26 +25,40 @@ enum PassiveId {
     EMPTY_TOME,     // 2. Szybkostrzelnosc
     BRACER,         // 3. Szybkosc pocisku
     CANDLE,         // 4. Obszar
-    CLOVER,         // 5. Szczescie
-    SPELLBINDER,    // 6. Czas trwania
-    SPINACH,        // 7. Obrazenia
-    PUMMAROLA,      // 8. Regeneracja
-    ATTRACTORB,     // 9. Magnes
-    ARMOR,          // 10. Pancerz
-    DUPLICATOR      // 11. Ilosc pociskow (Max lvl 3)
+    SPELLBINDER,    // 5. Czas trwania
+    SPINACH,        // 6. Obrazenia
+    PUMMAROLA,      // 7. Regeneracja
+    ATTRACTORB,     // 8. Magnes
+    ARMOR,          // 9. Pancerz
+    DUPLICATOR      // 10. Ilosc pociskow (Max lvl 3)
 };
 
 // --- STRUKTURY DANYCH ---
 
+struct WeaponLevelStats {
+    float damage;
+    float cooldown;
+    float duration;
+    float speed;
+    float area;
+    int amount;        // Ile pocisków bazowo
+    int pierce;
+    std::string description; // Opis ulepszenia, np. "+1 Damage"
+};
+
 struct WeaponDef {
     WeaponId id;
     std::string name;
-    std::string description;
     sf::Color color;
-    float baseCooldown;
-    float duration;
-    float speed;
-    float damage;
+
+    // Lista poziomów. levels[0] to lvl 1, levels[1] to lvl 2 itd.
+    std::vector<WeaponLevelStats> levels;
+};
+
+struct ActiveWeapon {
+    WeaponDef* def; // WskaŸnik do bazy danych zeby nie kopiowaæ ca³ej listy poziomów
+    int level = 1;
+    float cooldownTimer = 0.0f;
 };
 
 struct PassiveDef {
@@ -53,12 +67,6 @@ struct PassiveDef {
     std::string description;
     sf::Color color;
     int maxLevel; // 7 dla wiêkszoœci, 3 dla duplikatora
-};
-
-struct ActiveWeapon {
-    WeaponDef def;
-    int level = 1;
-    float cooldownTimer = 0.0f;
 };
 
 struct ActivePassive {
@@ -77,7 +85,6 @@ struct PlayerStats {
     float cooldown = 1.0f;      // Redukcja cooldownu (Tome)
     int amount = 0;             // Dodatkowe pociski (Duplicator)
     float magnet = 100.0f;      // Zasieg (Attractorb)
-    float luck = 1.0f;          // (Clover)
     float regen = 0.0f;         // HP na sekunde (Pummarola)
     int armor = 0;              // Redukcja obrazen (Armor)
 };
@@ -102,8 +109,8 @@ struct Projectile {
     bool returning = false;
     int pierceLeft = 0;
     std::vector<int> hitEnemies;
-    bool isRunetracer = false;
     float damage = 1.0f; // Obra¿enia pocisku
+    float angleOffset = 0.0f;
 };
 
 struct DamageZone {
@@ -116,10 +123,33 @@ struct DamageZone {
 };
 
 struct ExpOrb {
-    sf::CircleShape shape;
+    sf::Sprite sprite;
     sf::Vector2f velocity;
     int value = 0;
     bool isOnGround = false;
+    float animTimer = 0.0f;
+    int currentFrame = 0;
+
+    ExpOrb(const sf::Texture& tex) : sprite(tex) {
+        value = 0;
+        isOnGround = false;
+        animTimer = 0.0f;
+        currentFrame = 0;
+        sprite.setScale(sf::Vector2f(1.5f, 1.5f));
+    }
+};
+
+struct Portal {
+    sf::Sprite sprite;
+    float animTimer = 0.0f;
+    int currentFrame = 0;
+
+    Portal(const sf::Texture& tex, float x, float y) : sprite(tex) {
+        sprite.setTextureRect(sf::IntRect({ 0, 0 }, { 32, 32 }));
+        sprite.setOrigin({ 20.f, 30.f });
+        sprite.setPosition({ x, y });
+        sprite.setScale({ 5.0f, 5.0f });
+    }
 };
 
 // --- STRUKTURY UI ---
@@ -146,32 +176,175 @@ struct UpgradeCard {
 
 // --- BAZA DANYCH ---
 
-std::vector<WeaponDef> weaponDB = {
-    {WHIP, "Szalik AGH", "Atakuje poziomo", sf::Color(139, 69, 19), 1.0f, 0.2f, 0.f, 10.f},
-    {MAGIC_WAND, "Komputer", "Strzela w najblizszego", sf::Color(0, 255, 255), 1.0f, 3.0f, 600.f, 5.f},
-    {KNIFE, "Olowek", "Leci w kierunku patrzenia", sf::Color(200, 200, 200), 0.5f, 2.0f, 1000.f, 5.f},
-    {AXE, "Krzeslo", "Leci lobem w gore", sf::Color(100, 100, 100), 1.2f, 2.0f, 500.f, 15.f},
-    {BOOMERANG, "Podrecznik do analizy", "Leci i wraca", sf::Color(0, 0, 255), 1.3f, 2.0f, 700.f, 10.f},
-    {BIBLE, "Piwo AGH-owskie", "Orbituje wokol ciebie", sf::Color(255, 255, 0), 3.0f, 3.0f, 3.0f, 5.f},
-    {FIRE_WAND, "Kawalki stali", "Potezne pociski", sf::Color(255, 69, 0), 1.5f, 4.0f, 300.f, 20.f},
-    {GARLIC, "Wiedza AGH", "Aura raniaca wrogow", sf::Color(255, 200, 200), 0.15f, 9999.f, 0.f, 3.f},
-    {HOLY_WATER, "Fiolka z laboratorium", "Tworzy plame", sf::Color(0, 100, 255), 3.0f, 3.0f, 400.f, 5.f},
-    {RUNETRACER, "Dlugopis", "Przebija i skacze", sf::Color(255, 0, 255), 1.5f, 3.0f, 800.f, 8.f},
-    {LIGHTNING, "Studencki czwartek", "Uderza z nieba", sf::Color(200, 200, 0), 1.2f, 0.15f, 0.f, 20.f}
-};
+std::vector<WeaponDef> weaponDB;
+
+void initWeaponDB() {
+    WeaponDef whip;
+    whip.id = WHIP;
+    whip.name = "Szalik AGH";
+    whip.color = sf::Color(139, 69, 19);
+    // LVL 1 (Bazowy)
+    //                      damage, cooldown, duration, speed, area, amount, pierce, discription
+    whip.levels.push_back({ 10.f, 1.0f, 0.2f, 0.f, 1.0f, 1, 1, "Atakuje poziomo" });
+    // LVL 2
+    whip.levels.push_back({ 10.f, 1.0f, 0.2f, 0.f, 1.0f, 2, 1, "Ilosc +1 (Atakuje tyl)" });
+    // LVL 3
+    whip.levels.push_back({ 15.f, 1.0f, 0.2f, 0.f, 1.0f, 2, 1,  "Obrazenia +5" });
+	// LVL 4
+    whip.levels.push_back({ 20.f, 1.0f, 0.2f, 0.f, 1.1f, 2, 1, "Obrazenia +5 i Obszar 10%" });
+	// LVL 5
+    whip.levels.push_back({ 25.f, 1.0f, 0.2f, 0.f, 1.1f, 2, 1, "Obrazenia +5" });
+	// LVL 6
+    whip.levels.push_back({ 30.f, 1.0f, 0.2f, 0.f, 1.2f, 2, 1, "Obrazenia +5 i Obszar 10%" });
+	// LVL 7
+    whip.levels.push_back({ 35.f, 1.0f, 0.2f, 0.f, 1.2f, 2, 1, "Obrazenia +5" });
+    
+    weaponDB.push_back(whip);
+
+    WeaponDef wand;
+    wand.id = MAGIC_WAND;
+    wand.name = "Piwo AGH-owskie";
+    wand.color = sf::Color(0, 255, 255);
+
+    wand.levels.push_back({ 5.f, 1.0f, 3.0f, 600.f, 1.0f, 1, 1, "Strzela w najblizszego wroga" });
+    wand.levels.push_back({ 5.f, 1.0f, 3.0f, 600.f, 1.0f, 2, 1, "Ilosc +1" });
+    wand.levels.push_back({ 5.f, 0.8f, 3.0f, 600.f, 1.0f, 2, 1, "Szybkostrzelnosc zwiekszona o 20%" });
+    wand.levels.push_back({ 5.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 1, "Ilosc +1" });
+    wand.levels.push_back({ 10.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 1, "Obrazenia +5" });
+    wand.levels.push_back({ 15.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 1, "Obrazenia +5" });
+    wand.levels.push_back({ 15.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 1, "Przechodzi przez jednego wroga wiecej" });
+    weaponDB.push_back(wand);
+
+
+    WeaponDef knife;
+    knife.id = KNIFE;
+    knife.name = "Olowek";
+    knife.color = sf::Color(200, 200, 200);
+
+    knife.levels.push_back({ 3.f, 1.0f, 1.0f, 900.f, 1.0f, 1, 1, "Leci w kierunku patrzenia" });
+    knife.levels.push_back({ 3.f, 1.0f, 1.0f, 900.f, 1.0f, 2, 1, "Ilosc +1" });
+    knife.levels.push_back({ 8.f, 1.0f, 1.0f, 900.f, 1.0f, 3, 1, "Ilosc +1 i obrazenia +5" });
+    knife.levels.push_back({ 8.f, 1.0f, 1.0f, 900.f, 1.0f, 3, 1, "Przechodzi przez jednego wroga wiecej" });
+    knife.levels.push_back({ 8.f, 1.0f, 1.0f, 900.f, 1.0f, 4, 1, "Ilosc +1" });
+    knife.levels.push_back({ 13.f, 1.0f, 1.0f, 900.f, 1.0f, 4, 1, "Obrazenia +5" });
+    knife.levels.push_back({ 13.f, 1.0f, 1.0f, 900.f, 1.0f, 4, 1, "Przechodzi przez jednego wroga wiecej" });
+    weaponDB.push_back(knife);
+
+    WeaponDef axe;
+    axe.id = AXE;
+    axe.name = "Krzeslo";
+    axe.color = sf::Color(100, 100, 100);
+
+    axe.levels.push_back({ 20.f, 1.0f, 3.0f, 600.f, 1.0f, 1, 1, "Leci w gore po paraboli" });
+    axe.levels.push_back({ 20.f, 1.0f, 3.0f, 600.f, 1.0f, 2, 1, "Ilosc +1" });
+    axe.levels.push_back({ 40.f, 1.0f, 3.0f, 600.f, 1.0f, 2, 1, "Obrazenia +20" });
+    axe.levels.push_back({ 40.f, 1.0f, 3.0f, 600.f, 1.0f, 3, 1, "Ilosc +1" });
+    axe.levels.push_back({ 60.f, 1.0f, 3.0f, 600.f, 1.0f, 3, 1, "Obrazenia +20" });
+    axe.levels.push_back({ 80.f, 1.0f, 3.0f, 600.f, 1.0f, 3, 1, "Obrazenia +20" });
+    axe.levels.push_back({ 80.f, 1.0f, 3.0f, 600.f, 1.5f, 3, 1, "Obszar zwiekszony o 50%" });
+    weaponDB.push_back(axe);
+
+    WeaponDef banan;
+    banan.id = BOOMERANG;
+    banan.name = "Banan";
+    banan.color = sf::Color(0, 0, 255);
+
+    banan.levels.push_back({ 5.f, 1.0f, 2.0f, 600.f, 1.0f, 1, 1, "Leci i wraca jak bumerang" });
+    banan.levels.push_back({ 10.f, 1.0f, 2.0f, 600.f, 1.0f, 1, 1, "Obrazenia +5" });
+    banan.levels.push_back({ 10.f, 1.0f, 2.0f, 750.f, 1.1f, 1, 1, "Obszar zwiekszony o 10% i szybkosc o 25%" });
+    banan.levels.push_back({ 10.f, 1.0f, 2.0f, 750.f, 1.1f, 2, 1, "Ilosc +1" });
+    banan.levels.push_back({ 15.f, 1.0f, 2.0f, 750.f, 1.1f, 2, 1, "Obrazenia +5" });
+    banan.levels.push_back({ 15.f, 1.0f, 2.0f, 937.5f, 1.2f, 2, 1, "Obszar zwiekszony o 10% i szybkosc o 25%" });
+    banan.levels.push_back({ 15.f, 1.0f, 2.0f, 937.5f, 1.2f, 3, 1, "Ilosc +1" });
+    weaponDB.push_back(banan);
+
+
+    WeaponDef bible;
+    bible.id = BIBLE;
+    bible.name = "Podrecznik do analizy";
+    bible.color = sf::Color(255, 255, 0);
+
+    bible.levels.push_back({ 10.f, 1.0f, 3.0f, 600.f, 1.0f, 1, 1, "Orbituje wokol ciebie" });
+    bible.levels.push_back({ 10.f, 1.0f, 3.0f, 600.f, 1.0f, 2, 1, "Ilosc +1" });
+    bible.levels.push_back({ 10.f, 1.0f, 3.0f, 780.f, 1.25f, 2, 1, "Obszar zwiekszony o 25% i szybkosc o 30%" });
+    bible.levels.push_back({ 15.f, 1.0f, 3.0f, 780.f, 1.25f, 2, 1, "Obrazenia +5" });
+    bible.levels.push_back({ 15.f, 1.0f, 3.0f, 780.f, 1.25f, 3, 1, "Ilosc +1" });
+    bible.levels.push_back({ 15.f, 1.0f, 3.0f, 1014.f, 1.50f, 3, 1, "Obszar zwiekszony o 25% i szybkosc o 30%" });
+    bible.levels.push_back({ 20.f, 1.0f, 3.0f, 1014.f, 1.50f, 3, 1, "Obrazenia +5" });
+    weaponDB.push_back(bible);
+
+
+    WeaponDef metal;
+    metal.id = FIRE_WAND;
+    metal.name = "Kawalki stali";
+    metal.color = sf::Color(255, 69, 0);
+
+    metal.levels.push_back({ 20.f, 1.0f, 3.0f, 200.f, 1.0f, 3, 1, "Potezne pociski" });
+    metal.levels.push_back({ 30.f, 1.0f, 3.0f, 200.f, 1.0f, 3, 1, "Obrazenia +10" });
+    metal.levels.push_back({ 40.f, 1.0f, 3.0f, 200.f, 1.0f, 4, 1, "Obrazenia +10 i ilosc +1" });
+    metal.levels.push_back({ 50.f, 1.0f, 3.0f, 240.f, 1.0f, 4, 1, "Obrazenia +10 i szybkosc o 20%" });
+    metal.levels.push_back({ 60.f, 1.0f, 3.0f, 240.f, 1.0f, 4, 1, "Obrazenia +10" });
+    metal.levels.push_back({ 70.f, 1.0f, 3.0f, 288.f, 1.0f, 4, 1, "Obrazenia +10 i szybkosc o 20%" });
+    metal.levels.push_back({ 80.f, 1.0f, 3.0f, 288.f, 1.0f, 6, 1, "Obrazenia +10 i ilosc +2" });
+    weaponDB.push_back(metal);
+
+
+    WeaponDef stink;
+    stink.id = GARLIC;
+    stink.name = "Smierdzacy zapach";
+    stink.color = sf::Color(255, 200, 200);
+
+    stink.levels.push_back({ 5.f, 1.0f, 3.0f, 600.f, 1.0f, 1, 1, "Aura raniaca wrogow" });
+    stink.levels.push_back({ 7.f, 1.0f, 3.0f, 600.f, 1.25f, 1, 1, "Obszar zwiekszony o 25% i obrazenia +2" });
+    stink.levels.push_back({ 9.f, 0.0f, 3.0f, 600.f, 1.25f, 1, 1, "Obrazenia +2" });
+    stink.levels.push_back({ 9.f, 0.8f, 3.0f, 600.f, 1.25f, 1, 1, "Szybkostrzelnosc zwiekszona o 20%" });
+    stink.levels.push_back({ 11.f, 0.8f, 3.0f, 600.f, 1.50f, 1, 1, "Obszar zwiekszony o 25% i obrazenia +2" });
+    stink.levels.push_back({ 11.f, 0.6f, 3.0f, 600.f, 1.50f, 1, 1,"Szybkostrzelnosc zwiekszona o 20%" });
+    stink.levels.push_back({ 13.f, 0.6f, 3.0f, 600.f, 1.75f, 1, 1, "Obszar zwiekszony o 25% i obrazenia +2" });
+    weaponDB.push_back(stink);
+
+
+    WeaponDef flask;
+    flask.id = HOLY_WATER;
+    flask.name = "Fiolka z laboratorium";
+    flask.color = sf::Color(0, 100, 255);
+
+    flask.levels.push_back({ 15.f, 1.0f, 2.0f, 100.f, 1.0f, 1, 1, "Tworzy plame" });
+    flask.levels.push_back({ 15.f, 1.0f, 2.0f, 100.f, 1.0f, 2, 1, "Ilosc +1" });
+    flask.levels.push_back({ 25.f, 1.0f, 2.5f, 100.f, 1.0f, 2, 1, "Efekt trwa 0,5s dluzej i obrazenia +10" });
+    flask.levels.push_back({ 25.f, 1.0f, 2.5f, 100.f, 1.2f, 3, 1, "Ilosc +1 i obszar zwiekszony o 20%" });
+    flask.levels.push_back({ 25.f, 1.0f, 2.8f, 100.f, 1.2f, 3, 1, "Efekt trwa 0,3s dluzej" });
+    flask.levels.push_back({ 35.f, 1.0f, 2.8f, 100.f, 1.2f, 3, 1, "Obrazenia +10" });
+    flask.levels.push_back({ 50.f, 1.0f, 3.3f, 100.f, 1.2f, 4, 1, "Efekt trwa 0,5s dluzej, ilosc +1 i obr +15" });
+    weaponDB.push_back(flask);
+
+
+    WeaponDef lightning;
+    lightning.id = LIGHTNING;
+    lightning.name = "Piorun";
+    lightning.color = sf::Color::Yellow;
+    lightning.levels.push_back({ 5.f, 1.0f, 0.2f, 0.f, 1.0f, 1, 1, "Razi losowych wrogow" });
+    lightning.levels.push_back({ 7.f, 1.0f, 0.2f, 0.f, 1.0f, 1, 1, "Obrazenia +2" });
+    lightning.levels.push_back({ 7.f, 1.0f, 0.2f, 0.f, 1.0f, 2, 1, "Ilosc +1" });
+    lightning.levels.push_back({ 7.f, 0.8f, 0.2f, 0.f, 1.0f, 2, 1, "Szybkostrzelnosc zwiekszona o 20%" });
+    lightning.levels.push_back({ 8.f, 0.8f, 0.2f, 0.f, 1.0f, 2, 1, "Obrazenia +1" });
+    lightning.levels.push_back({ 10.f, 0.8f, 0.2f, 0.f, 1.0f, 2, 1, "Obrazenia +2" });
+    lightning.levels.push_back({ 10.f, 0.8f, 0.2f, 0.f, 1.0f, 3, 1, "Ilosc +1" });
+    weaponDB.push_back(lightning);
+}
 
 std::vector<PassiveDef> passiveDB = {
-    {HOLLOW_HEART, "Serce Witalnosci", "Zwieksza Max HP (+20%)", sf::Color(200, 0, 0), 7},
-    {EMPTY_TOME, "Energetyk", "Szybkostrzelnosc (-8% cooldown)", sf::Color(200, 200, 0), 7},
-    {BRACER, "Moc rzutu", "Szybkosc pocisku (+10%)", sf::Color(100, 100, 255), 7},
-    {CANDLE, "Wieksze pociski", "Obszar pocisku (+10%)", sf::Color(255, 150, 0), 7},
-    {CLOVER, "Koniczyna", "Szczescie (+10%)", sf::Color(0, 255, 0), 7},
-    {SPELLBINDER, "Sprawdzenie Obecnosci", "Czas trwania (+10%)", sf::Color(100, 0, 255), 7},
-    {SPINACH, "Sila", "Obrazenia (+10%)", sf::Color(0, 150, 0), 7},
-    {PUMMAROLA, "Serce Regeneracji", "Regeneracja HP (+0.2/s)", sf::Color(255, 100, 100), 7},
-    {ATTRACTORB, "Magnes", "Zasieg zbierania (+30%)", sf::Color(0, 0, 255), 7},
-    {ARMOR, "Pancerz", "Redukcja obrazen (+1)", sf::Color(150, 150, 150), 7},
-    {DUPLICATOR, "Duplikator", "Ilosc pociskow (+1)", sf::Color(0, 255, 255), 3}
+	// ID, Nazwa, Opis, Kolor, Max lvl
+    {HOLLOW_HEART, "Serce Witalnosci", "Zwieksza Max HP (+20%)", sf::Color(200, 0, 0), 5},
+    {EMPTY_TOME, "Energetyk", "Szybkostrzelnosc (-8% cooldown)", sf::Color(200, 200, 0), 5},
+    {BRACER, "Moc rzutu", "Szybkosc pocisku (+10%)", sf::Color(100, 100, 255), 5},
+    {CANDLE, "Sterydy", "Obszar pocisku (+10%)", sf::Color(255, 150, 0), 5},
+    {SPELLBINDER, "Warunek", "Czas trwania (+10%)", sf::Color(100, 0, 255), 5},
+    {SPINACH, "Sila", "Obrazenia (+10%)", sf::Color(0, 150, 0), 5},
+    {PUMMAROLA, "Odzywajacy kebs", "Regeneracja HP (+0.2/s)", sf::Color(255, 100, 100), 5},
+    {ATTRACTORB, "Magnes", "Zasieg zbierania (+30%)", sf::Color(0, 0, 255), 5},
+    {ARMOR, "Pancerz", "Redukcja obrazen (+1)", sf::Color(150, 150, 150), 5},
+    {DUPLICATOR, "Duplikator chat GPT", "Ilosc pociskow (+1)", sf::Color(0, 255, 255), 2}
 };
 
 
@@ -205,17 +378,46 @@ PlayerStats recalculateStats(const std::vector<ActivePassive>& passives) {
     for (const auto& p : passives) {
         float bonus = (float)p.level;
         switch (p.def.id) {
-        case HOLLOW_HEART: stats.maxHp += (int)(bonus * 2); break; // +2 HP per level
-        case EMPTY_TOME: stats.cooldown -= (bonus * 0.08f); break; // -8% per level
-        case BRACER: stats.speed += (bonus * 0.1f); break;
-        case CANDLE: stats.area += (bonus * 0.1f); break;
-        case CLOVER: stats.luck += (bonus * 0.1f); break;
-        case SPELLBINDER: stats.duration += (bonus * 0.1f); break;
-        case SPINACH: stats.might += (bonus * 0.1f); break;
-        case PUMMAROLA: stats.regen += (bonus * 0.2f); break;
-        case ATTRACTORB: stats.magnet += (bonus * 50.f); break;
-        case ARMOR: stats.armor += (int)bonus; break;
-        case DUPLICATOR: stats.amount += (int)bonus; break;
+        case HOLLOW_HEART:
+            stats.maxHp += (int)(bonus * 2);
+            std::cout << "Max HP: " << stats.maxHp << std::endl;
+            break;
+        case EMPTY_TOME:
+            stats.cooldown -= (bonus * 0.08f);
+            std::cout << "Cooldown: " << stats.cooldown << std::endl;
+            break;
+        case BRACER:
+            stats.speed += (bonus * 0.1f);
+            std::cout << "Bullet speed: " << stats.speed << std::endl;
+            break;
+        case CANDLE:
+            stats.area += (bonus * 0.1f);
+            std::cout << "Area: " << stats.area << std::endl;
+            break;
+        case SPELLBINDER:
+            stats.duration += (bonus * 0.1f);
+            std::cout << "Duration: " << stats.duration << std::endl;
+            break;
+        case SPINACH:
+            stats.might += (bonus * 0.1f);
+            std::cout << "Damage: " << stats.might << std::endl;
+            break;
+        case PUMMAROLA:
+            stats.regen += (bonus * 0.2f);
+            std::cout << "Regen: " << stats.regen << " na sekunde" << std::endl;
+            break;
+        case ATTRACTORB:
+            stats.magnet += (bonus * 50.f);
+            std::cout << "Magnet: " << stats.magnet << std::endl;
+            break;
+        case ARMOR:
+            stats.armor += (int)bonus;
+            std::cout << "Armor: " << stats.armor << std::endl;
+            break;
+        case DUPLICATOR:
+            stats.amount += (int)bonus;
+            std::cout << "Duplicator: " << stats.amount+1 << std::endl;
+            break;
         }
     }
     // Limit cooldownu zeby nie bylo 0
@@ -232,6 +434,8 @@ int main() {
     sf::RenderWindow window(sf::VideoMode({ windowWidth, windowHeight }), "Projekt Podstawy Informatyki");
     window.setFramerateLimit(140);
 
+    window.setKeyRepeatEnabled(false);//linia zeby przytrzymanie klawisza ESC nie robily sie dziwne rzeczy
+
     bool isFullscreen = false;
 
     sf::Texture bgTexture;
@@ -239,10 +443,38 @@ int main() {
     sf::Sprite background(bgTexture);
     float mapWidth = (float)bgTexture.getSize().x;
 
-    sf::Font font;
-    if (!font.openFromFile("czcionka/arial.ttf")) return -1;                                    // wczytywanie czcionki
+	initWeaponDB();//inicjalizacja bazy danych broni
 
-    // --- AUDIO (INIT) - SFML 3.0 FIX ---                                             //********************************************
+    // wczytywanie czcionki
+    sf::Font font;
+    if (!font.openFromFile("czcionka/arial.ttf")) return -1;
+
+    // PORTAl
+    sf::Texture portalTexture;
+    if (!portalTexture.loadFromFile("animacje/portal.png")) {
+        std::cout << "Brak pliku portal.png!" << std::endl;
+    }
+
+    // TWORZENIE PORTALI
+    std::vector<Portal> portals;
+
+    // Wysokoœæ spawnu (na ziemi)
+    // ground.getPosition().y to góra pod³ogi. Odejmujemy np. 60, ¿eby portal sta³ na ziemi, a nie w niej.
+    // Musisz mieæ dostêp do zmiennej 'ground' w tym miejscu, albo wpisz na sztywno np. windowHeight - 80.f
+    float portalY = windowHeight - 85.f;
+
+    // Lewy portal (na pocz¹tku mapy)
+    portals.emplace_back(portalTexture, 100.f, portalY);
+
+    // Prawy portal (na koñcu mapy)
+    portals.emplace_back(portalTexture, mapWidth - 100.f, portalY);
+
+    // -------------
+
+    sf::Texture expOrbTexture;
+    if (!expOrbTexture.loadFromFile("animacje/exp_orb.png")) return -1;
+
+    // --- AUDIO  ---                                             //********************************************
     sf::Music bgMusic;
     if (!bgMusic.openFromFile("dzwieki/music.ogg")) {
         std::cout << "Brak pliku music.ogg!" << std::endl;
@@ -256,8 +488,12 @@ int main() {
         std::cout << "Brak pliku jump_sound.wav!" << std::endl;
     }
 
-    // SFML 3.0: Tworzymy sf::Sound podaj¹c bufor w konstruktorze,
-    // aby unikn¹æ b³êdu o braku domyœlnego konstruktora.
+    sf::SoundBuffer expBuffer;
+    if (!expBuffer.loadFromFile("dzwieki/exp.wav")) {
+        std::cout << "Brak pliku exp.wav!" << std::endl;
+    }
+    sf::Sound expSound(expBuffer);
+    expSound.setVolume(15.f);
 
     float sfxScale = 50.0f;
     sf::Sound jumpSound(jumpBuffer);
@@ -276,6 +512,13 @@ int main() {
     }
     sf::Sound gameOverSound(gameOverBuffer); // Konstruktor SFML 3.0                                                        // ustawienia dŸwiêku gameover
     gameOverSound.setVolume(sfxScale * 1.5f);
+
+    sf::SoundBuffer levelUpBuffer;
+    if (!levelUpBuffer.loadFromFile("dzwieki/levelup.wav")) {
+        std::cout << "Brak pliku levelup.wav!" << std::endl;
+    }
+    sf::Sound levelUpSound(levelUpBuffer);
+    levelUpSound.setVolume(60.f);
     // -----------------------------------
 
 
@@ -339,7 +582,7 @@ int main() {
 
     // --- SETUP MENU ---
     sf::Text menuTitle(font);                                                              // zmienna SFML typu Text 
-    menuTitle.setString("                   PROJEKT \n      PODSTAWY INFORMATYKI");
+    menuTitle.setString("             PROJEKT \n    PODSTAWY INFORMATYKI");
     menuTitle.setCharacterSize(80);
     menuTitle.setFillColor(sf::Color::Red);
     menuTitle.setOutlineColor(sf::Color::White);
@@ -2428,7 +2671,6 @@ int main() {
 
     sf::RectangleShape bossBarFill(sf::Vector2f(800.f, 30.f));
     bossBarFill.setFillColor(sf::Color::Red); // Jasnoczerwone ¿ycie
-    bossBarFill.setOrigin(sf::Vector2f(400.f, 0.f));
     bossBarFill.setPosition(sf::Vector2f((windowWidth / 2.f) - 400.f, 100.f));
 
     sf::Text bossNameText(font);
@@ -2490,7 +2732,7 @@ int main() {
     PlayerStats pStats;
 
     // EKWIPUNEK
-    std::vector<ActiveWeapon> weaponInventory;          // max 3 bronie
+	std::vector<ActiveWeapon> weaponInventory;          // max 3 broñ
     std::vector<ActivePassive> passiveInventory;        // max 3 przedmioty
 
     int level = 1;
@@ -2511,7 +2753,7 @@ int main() {
     // Obiekt Ground (Pod³oga) - ¿eby unikaæ b³êdu z poprzedniej tury
     sf::RectangleShape ground({ mapWidth, 100.f });
     ground.setFillColor(sf::Color::Transparent);
-    ground.setPosition({ 0.f, windowHeight - 80.f });
+    ground.setPosition({ 0.f, windowHeight - 70.f });
 
     float baseGravity = 2500.f;
     float jumpForce = -1100.f;
@@ -2531,8 +2773,8 @@ int main() {
                 if (key->scancode == sf::Keyboard::Scancode::F11) {
                     isFullscreen = !isFullscreen;
                     window.close();
-                    if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "VS Clone", sf::Style::Default, sf::State::Fullscreen);        // nazwa na pasku zadañ
-                    else window.create(sf::VideoMode({ windowWidth, windowHeight }), "VS Clone", sf::Style::Default, sf::State::Windowed);          //
+                    if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt Pi", sf::Style::Default, sf::State::Fullscreen);        // nazwa na pasku zadañ
+                    else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt Pi", sf::Style::Default, sf::State::Windowed);          //
                     window.setFramerateLimit(140);
                 }
             }
@@ -2543,7 +2785,12 @@ int main() {
                         if (btn.shape.getGlobalBounds().contains(mousePos)) {
                             // Tutaj wybieramy broñ
                             weaponInventory.clear();
-                            weaponInventory.push_back({ weaponDB[btn.id], 1, 0.f });
+                            WeaponDef* targetDef = nullptr;
+                            for (auto& dbW : weaponDB) if (dbW.id == btn.id) targetDef = &dbW;
+
+                            if (targetDef) {
+                                weaponInventory.push_back({ targetDef, 1, 0.f });
+                            }
                             gameStarted = true;
                             bgMusic.play();
                             pStats = recalculateStats(passiveInventory);
@@ -2585,8 +2832,8 @@ int main() {
                 if (key->scancode == sf::Keyboard::Scancode::F11) {
                     isFullscreen = !isFullscreen;
                     window.close();
-                    if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "VS Clone", sf::Style::Default, sf::State::Fullscreen);
-                    else window.create(sf::VideoMode({ windowWidth, windowHeight }), "VS Clone", sf::Style::Default, sf::State::Windowed);
+                    if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt Pi", sf::Style::Default, sf::State::Fullscreen);
+                    else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
                     window.setFramerateLimit(140);
                     dtClock.restart();
                 }
@@ -2647,7 +2894,7 @@ int main() {
                                 if (mouseBtn->button == sf::Mouse::Button::Left) {
                                     for (auto& btn : weaponButtons) {
                                         if (btn.shape.getGlobalBounds().contains(mp)) {
-                                            weaponInventory.push_back({ weaponDB[btn.id], 1, 0.f });
+                                            weaponInventory.push_back({ &weaponDB[btn.id], 1, 0.f });
                                             gameStarted = true;
                                             bgMusic.play();
                                             pStats = recalculateStats(passiveInventory);
@@ -2688,9 +2935,16 @@ int main() {
                         if (type == 0) { // Broñ
                             bool found = false;
                             for (auto& w : weaponInventory) {
-                                if (w.def.id == weaponDB[idx].id) { w.level++; found = true; break; }
+                                if (w.def->id == weaponDB[idx].id) {
+                                    // Sprawdzamy czy nie przekraczamy max levela
+                                    if (w.level < w.def->levels.size()) {
+                                        w.level++;
+                                    }
+                                    found = true;
+                                    break;
+                                }
                             }
-                            if (!found) weaponInventory.push_back({ weaponDB[idx], 1, 0.f });
+                            if (!found) weaponInventory.push_back({ &weaponDB[idx], 1, 0.f });
                         }
                         else { // Pasywka
                             bool found = false;
@@ -2755,7 +3009,7 @@ int main() {
                                 if (mouseBtn->button == sf::Mouse::Button::Left) {
                                     for (auto& btn : weaponButtons) {
                                         if (btn.shape.getGlobalBounds().contains(mp)) {
-                                            weaponInventory.push_back({ weaponDB[btn.id], 1, 0.f });
+                                            weaponInventory.push_back({ &weaponDB[btn.id], 1, 0.f });
                                             gameStarted = true;
                                             bgMusic.play();
                                             pStats = recalculateStats(passiveInventory);
@@ -2784,6 +3038,19 @@ int main() {
         }
         else if (!isPaused) {
             gameTime += dt;
+
+            // --- REGENERACJA HP ---
+            if (pStats.regen > 0.f) {
+                if (regenClock.getElapsedTime().asSeconds() >= 1.0f) {// Sprawdzamy, czy minê³a 1 sekunda
+                    if (currentHp < pStats.maxHp) {
+                        currentHp += pStats.regen;
+                        if (currentHp > pStats.maxHp) {// Upewniamy siê, ¿e nie przekroczymy Max HP
+                            currentHp = (float)pStats.maxHp;
+                        }
+                    }
+                    regenClock.restart(); // Resetujemy zegar regeneracji
+                }
+            }
 
             // --- AKTUALIZACJA ANIMACJI (PRIORYTETY: ŒMIERÆ > OBRA¯ENIA > SKOK > OBRÓT > HAMOWANIE > RUCH) ---
             animTimer += dt;
@@ -2893,56 +3160,38 @@ int main() {
             // ZMIANA: Pozwalamy na sterowanie TYLKO jeœli postaæ NIE umiera
             if (!isDying) {
                 float currentSpeed = pStats.moveSpeed;
-
-                // Sprint
-                if (Keyboard::isKeyPressed(keyRun1) || Keyboard::isKeyPressed(keyRun2) || Keyboard::isKeyPressed(keyRun3))
-                {
+                if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::RShift)) && onGround) {
                     currentSpeed *= 1.7f;
                 }
 
-                // --- STEROWANIE LEWO (A) ---
-                if (Keyboard::isKeyPressed(keyLeft1) || Keyboard::isKeyPressed(keyLeft2) || Keyboard::isKeyPressed(keyLeft3))
-                {
+                // 1. Sprawdzamy co jest wciœniête
+                bool pressingLeft = sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Left);
+                bool pressingRight = sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Right);
+
+                // 2. Wykonujemy ruch TYLKO jeœli nie wciskamy obu naraz
+                if (pressingLeft && !pressingRight) {
                     velocity.x -= currentSpeed;
 
-                    // Jeœli patrzymy w PRAWO (1) i nie robimy jeszcze obrotu -> ZACZNIJ OBRÓT
                     if (facingDir == 1 && !isTurning && onGround) {
-                        isTurning = true;
-                        isBraking = false; // Obrót przerywa hamowanie
-                        currentAnimFrame = 0;
-                        animTimer = 0.f;
+                        isTurning = true; isBraking = false; currentAnimFrame = 0; animTimer = 0.f;
                     }
-                    // Jeœli nie jesteœmy na ziemi lub ju¿ siê obróciliœmy -> po prostu ustaw kierunek
-                    else if (!isTurning) {
-                        facingDir = -1;
-                    }
+                    else if (!isTurning) facingDir = -1;
                 }
-
-                // --- STEROWANIE PRAWO (D) ---
-                if (Keyboard::isKeyPressed(keyRight1) || Keyboard::isKeyPressed(keyRight2) || Keyboard::isKeyPressed(keyRight3))
-                {
+                else if (pressingRight && !pressingLeft) {
                     velocity.x += currentSpeed;
 
-                    // Jeœli patrzymy w LEWO (-1) i nie robimy jeszcze obrotu -> ZACZNIJ OBRÓT
                     if (facingDir == -1 && !isTurning && onGround) {
-                        isTurning = true;
-                        isBraking = false;
-                        currentAnimFrame = 0;
-                        animTimer = 0.f;
+                        isTurning = true; isBraking = false; currentAnimFrame = 0; animTimer = 0.f;
                     }
-                    else if (!isTurning) {
-                        facingDir = 1;
-                    }
+                    else if (!isTurning) facingDir = 1;
                 }
+                // Jeœli oba s¹ wciœniête (pressingLeft && pressingRight), 
+                // kod powy¿ej siê nie wykona, velocity.x zostanie 0.f, a postaæ stanie w Idle.
 
-                // Skok (W, Strza³ka w górê LUB Spacja)
-                if ((sf::Keyboard::isKeyPressed(keyJump1) || sf::Keyboard::isKeyPressed(keyJump2) || sf::Keyboard::isKeyPressed(keyJump3)) && onGround)
-                {
-
+                if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Space)) && onGround) {
                     velocity.y = jumpForce;
                     onGround = false;
-                    isTurning = false; // Skok anuluje animacjê obrotu
-
+                    isTurning = false;
                     jumpSound.play();
                 }
             }
@@ -2965,17 +3214,17 @@ int main() {
 
             player.setPosition(hitbox.getPosition());
 
-            // --- SPAWNOWANIE PRZECIWNIKÓW (BALANS + DYSTANS) ---
+            // --- SPAWNOWANIE PRZECIWNIKÓW  ---
             if (spawnClock.getElapsedTime().asSeconds() > 1.0f - (gameTime * 0.005f)) {
 
-                // --- KOD BOSSA (NOWE) ---
+                // --- KOD BOSSA ---
                 // 360 sekund = 6 minut
-                if (!bossSpawned && gameTime >= 360.f) {
+                if (!bossSpawned && gameTime >= 10.f) {
                     Enemy boss;
                     boss.id = nextEnemyId++;
-                    boss.hp = 100.0f;
-                    boss.maxHp = 100.0f;
-                    boss.isBoss = true; // To jest boss!
+                    boss.hp = 1000.0f;
+                    boss.maxHp = 1000.0f;
+                    boss.isBoss = true;
 
                     // Wygl¹d bossa (Du¿y i inny kolor)
                     boss.shape.setRadius(60.f);
@@ -2985,11 +3234,21 @@ int main() {
                     boss.shape.setOutlineThickness(3.f);
                     boss.shape.setOrigin(sf::Vector2f(60.f, 60.f));
 
-                    // Pozycja (daleko od gracza)
-                    float angle = (float)(rand() % 360);
-                    float dist = 800.f; // Zawsze 800px od gracza
-                    sf::Vector2f spawnOff(std::cos(angle) * dist, std::sin(angle) * dist);
-                    boss.shape.setPosition(player.getPosition() + spawnOff);
+                    float bossSpawnX = 0.f;
+
+                    // Losujemy portal: 0 = Lewy, 1 = Prawy
+                    if (rand() % 2 == 0) {
+                        bossSpawnX = 80.f; // Pozycja lewego portalu
+                    }
+                    else {
+                        bossSpawnX = mapWidth - 80.f; // Pozycja prawego portalu
+                    }
+
+                    // Wysokoœæ (Y)
+                    // Ustawiamy go na ziemi. Odejmujemy 80, ¿eby du¿y boss nie zapada³ siê w pod³ogê.
+                    float bossSpawnY = ground.getPosition().y - 80.f;
+
+                    boss.shape.setPosition(sf::Vector2f(bossSpawnX, bossSpawnY));
 
                     enemies.push_back(boss);
                     bossSpawned = true; // Zablokuj ponowne spawnowanie
@@ -3030,42 +3289,33 @@ int main() {
                     e.shape.setFillColor(sf::Color::Magenta); // Ró¿owy
                 }
                 else if (enemyType == 1) { // Œredni (od 2 min)
-                    e.hp = 5.0f; e.maxHp = 5.0f;
+                    e.hp = 15.0f; e.maxHp = 15.0f;
                     e.shape.setRadius(30.f);
                     e.shape.setFillColor(sf::Color::Cyan); // B³êkitny
                     // Opcjonalnie wolniejszy? (logika prêdkoœci jest ni¿ej w pêtli ruchu)
                 }
                 else if (enemyType == 2) { // Twardy (od 4 min)
-                    e.hp = 10.0f; e.maxHp = 10.0f;
+                    e.hp = 100.0f; e.maxHp = 100.0f;
                     e.shape.setRadius(35.f);
                     e.shape.setFillColor(sf::Color::Red); // Czerwony
                 }
 
                 e.shape.setOrigin(sf::Vector2f(e.shape.getRadius(), e.shape.getRadius()));
 
-                // 3. BEZPIECZNA POZYCJA (Nie za blisko gracza)
-                sf::Vector2f spawnPos;
-                float distToPlayer = 0.f;
-                int tries = 0;
-                do {
-                    // Losuj pozycjê na ca³ej mapie
-                    float rx = (float)(rand() % (int)mapWidth);
-                    float ry = (float)(rand() % (int)windowHeight * 2); // Trochê szerzej ni¿ ekran
-                    // Jeœli chcesz spawnowaæ poza ekranem, najlepiej losowaæ wokó³ gracza, ale tutaj
-                    // dla uproszczenia losujemy na mapie i sprawdzamy dystans.
+				// 3. BEZPIECZNA POZYCJA spawn tylko z lewej i prawej strony ekranu
+                float spawnX = 0.f;
+                if (rand() % 2 == 0) {// Losujemy stronê: 0 = Lewa, 1 = Prawa
+                    spawnX = 80.f; // TUTAJ DOPASOWAC DO MIEJSCA W KTORYM JEST PORTAL
+                }
+                else {
+                    spawnX = mapWidth - 80; // TUTAJ DOPASOWAC DO MIEJSCA W KTORYM JEST PORTAL
+                }
 
-                    spawnPos = sf::Vector2f(rx, ry);
+                float spawnY = windowHeight - 100.f;
 
-                    // Oblicz dystans
-                    sf::Vector2f diff = spawnPos - player.getPosition();
-                    distToPlayer = std::sqrt(diff.x * diff.x + diff.y * diff.y);
+                e.shape.setPosition(sf::Vector2f(spawnX, spawnY));
 
-                    tries++;
-                } while (distToPlayer < 600.f && tries < 10); // Minimum 600px od gracza
-
-                e.shape.setPosition(spawnPos);
                 enemies.push_back(e);
-
                 spawnClock.restart();
             }
 
@@ -3073,120 +3323,164 @@ int main() {
             for (auto& w : weaponInventory) {
                 w.cooldownTimer -= dt;
 
-                // Czosnek jako strefa
-                if (w.def.id == GARLIC) {
+                // 1. POBIERZ STATYSTYKI DLA OBECNEGO POZIOMU
+                // w.level - 1, bo wektor liczymy od 0 (lvl 1 to indeks 0)
+                const WeaponLevelStats& stats = w.def->levels[w.level - 1];
+
+                // Czosnek
+                if (w.def->id == GARLIC) {
                     bool zoneExists = false;
                     for (auto& z : zones) if (z.wId == GARLIC) zoneExists = true;
                     if (!zoneExists) {
                         DamageZone z; z.wId = GARLIC; z.maxLifeTime = 99999.f;
-                        z.damage = w.def.damage * pStats.might; // Apply might
-                        // Apply Area
-                        float r = 100.f * pStats.area;
-                        z.shape.setRadius(r); z.shape.setFillColor(sf::Color(255, 200, 200, 100)); z.shape.setOrigin({ r, r });
+
+                        // U¿ywamy stats.damage zamiast w.def.damage
+                        z.damage = stats.damage * pStats.might;
+
+                        // U¿ywamy stats.area
+                        float r = 100.f * stats.area * pStats.area;
+
+                        z.shape.setRadius(r);
+                        z.shape.setFillColor(sf::Color(255, 200, 200, 100));
+                        z.shape.setOrigin({ r, r });
                         zones.push_back(z);
                     }
                     continue;
                 }
 
                 if (w.cooldownTimer <= 0.f) {
-                    w.cooldownTimer = w.def.baseCooldown * pStats.cooldown; // Apply Cooldown reduction
+                    // U¿ywamy stats.cooldown
+                    w.cooldownTimer = stats.cooldown * pStats.cooldown;
 
-                    // Logika Amount (Duplicator)
-                    int amount = 1 + pStats.amount;
-                    if (w.def.id == WHIP || w.def.id == BIBLE || w.def.id == GARLIC) amount = 1; // Te bronie nie zawsze siê duplikuj¹ w prosty sposób
-                    if (w.def.id == FIRE_WAND) amount += 2; // Baza ma 3
+                    // Logika Amount (Baza z poziomu + Bonus gracza)
+                    // Np. Whip lvl 3 ma w bazie amount=2.
+                    int amount = stats.amount + pStats.amount;
+
+                    // Specjalne zasady (jeœli chcesz zablokowaæ duplikator dla niektórych broni)
+                    // if (w.def->id == GARLIC) amount = 1; 
 
                     for (int i = 0; i < amount; ++i) {
                         Projectile p;
-                        p.wId = w.def.id;
-                        p.damage = w.def.damage * pStats.might; // Apply Might
-                        float sizeMult = pStats.area;
-                        p.maxLifeTime = w.def.duration * pStats.duration; // Apply Duration
-                        float speed = w.def.speed * pStats.speed; // Apply Speed
+                        p.wId = w.def->id;
 
-                        // Inicjalizacja kszta³tu
-                        if (w.def.id == WHIP) {
+                        // --- U¯YWAMY STATYSTYK Z POZIOMU ---
+                        p.damage = stats.damage * pStats.might;
+                        float sizeMult = stats.area * pStats.area;
+                        p.maxLifeTime = stats.duration * pStats.duration;
+                        float speed = stats.speed * pStats.speed;
+                        // -----------------------------------
+
+                        // --- KONFIGURACJA KSZTA£TU (WHIP) ---
+                        if (w.def->id == WHIP) {
                             p.boxShape.setSize({ 150.f * sizeMult, 40.f * sizeMult });
-                            p.boxShape.setFillColor(w.def.color); p.boxShape.setOrigin({ 0.f, 20.f * sizeMult });
-                            p.startPos = player.getPosition(); p.boxShape.setPosition(player.getPosition());
-                            // Kolejne bicze bij¹ w drug¹ stronê (prosta logika)
-                            if (i % 2 == 0) { if (facingDir == -1) p.boxShape.setScale({ -1.f, 1.f }); }
-                            else { if (facingDir == 1) p.boxShape.setScale({ -1.f, 1.f }); } // Biæ w plecy
+                            p.boxShape.setFillColor(w.def->color);
+                            p.boxShape.setOrigin({ 0.f, 20.f * sizeMult });
+                            p.startPos = player.getPosition();
+                            p.boxShape.setPosition(player.getPosition());
+
+                            // Logika: 0 = przód, 1 = ty³, 2 = przód...
+                            if (i % 2 == 0) {
+                                p.boxShape.setScale({ (float)facingDir, 1.f });
+                            }
+                            else {
+                                p.boxShape.setScale({ -(float)facingDir, 1.f });
+                            }
                             p.pierceLeft = 999;
                         }
-                        else {
-                            // Circle shapes
-                            float rad = 10.f * sizeMult;
-                            if (w.def.id == AXE) rad = 15.f * sizeMult;
-                            p.shape.setRadius(rad); p.shape.setFillColor(w.def.color); p.shape.setOrigin({ rad, rad });
-                            p.shape.setPosition(player.getPosition());
+                        // --- LIGHTNING ---
+                        else if (w.def->id == LIGHTNING) {
+                            if (enemies.empty()) continue;
 
-                            if (w.def.id == MAGIC_WAND) {
-                                float minDist = 10000.f; sf::Vector2f target = player.getPosition() + sf::Vector2f(100, 0);
-                                for (auto& e : enemies) { float d = vectorLength(e.shape.getPosition() - player.getPosition()); if (d < minDist) { minDist = d; target = e.shape.getPosition(); } }
-                                // Rozrzut dla wielu pocisków
-                                sf::Vector2f dir = normalize(target - player.getPosition());
-                                if (amount > 1) {
-                                    float angle = (i - amount / 2.0f) * 0.2f;
-                                    float ca = cos(angle), sa = sin(angle);
-                                    dir = { dir.x * ca - dir.y * sa, dir.x * sa + dir.y * ca };
+                            std::vector<int> validTargets;
+                            for (size_t k = 0; k < enemies.size(); ++k) {
+                                if (vectorLength(enemies[k].shape.getPosition() - player.getPosition()) <= 800.f) {
+                                    validTargets.push_back(k);
                                 }
+                            }
+                            if (validTargets.empty()) { w.cooldownTimer = 0.05f; continue; }
+
+                            int idx = validTargets[rand() % validTargets.size()];
+                            p.boxShape.setSize({ 20.f * sizeMult, 100.f });
+                            p.boxShape.setFillColor(sf::Color::Yellow);
+                            p.boxShape.setOrigin({ 10.f * sizeMult, 100.f });
+                            p.boxShape.setPosition(enemies[idx].shape.getPosition());
+                            p.maxLifeTime = stats.duration; // Z levela
+                            p.damage = stats.damage;        // Z levela
+                            p.pierceLeft = 999;
+                        }
+                        // --- INNE BRONIE ---
+                        else {
+                            float rad = 10.f * sizeMult;
+                            if (w.def->id == AXE) rad = 30.f * sizeMult;
+
+                            p.shape.setRadius(rad); 
+                            p.shape.setFillColor(w.def->color);
+                            p.shape.setOrigin({ rad, rad });
+
+                            // Domyœlna pozycja gracza
+                            p.shape.setPosition(player.getPosition());
+                            p.pierceLeft = stats.pierce;
+
+                            if (w.def->id == MAGIC_WAND) {
+                                float minDist = 10000.f; 
+                                sf::Vector2f target = player.getPosition() + sf::Vector2f(100, 0);
+
+                                for (auto& e : enemies) {
+                                    float d = vectorLength(e.shape.getPosition() - player.getPosition());
+                                    if (d < minDist) { minDist = d; target = e.shape.getPosition(); }
+                                }
+                                sf::Vector2f dir = normalize(target - player.getPosition());
                                 p.velocity = dir * speed;
+
+                                // LOGIKA WÊ¯YKA: Przesuwamy start do ty³u dla kolejnych pocisków
+                                // i=0 (0px), i=1 (-20px), i=2 (-40px) wzd³u¿ wektora lotu
+                                p.shape.setPosition(player.getPosition() - (dir * ((float)i * 25.f)));
+
                                 p.pierceLeft = 0;
                             }
-                            else if (w.def.id == KNIFE) {
+                            else if (w.def->id == KNIFE) {
                                 sf::Vector2f dir((float)facingDir, 0.f);
-                                if (amount > 1) {
-                                    float angle = (i - amount / 2.0f) * 0.1f;
-                                    dir = { dir.x, dir.y + angle }; // Lekki rozrzut pionowy
-                                }
                                 p.velocity = normalize(dir) * speed;
+
+                                // LOGIKA WÊ¯YKA (jeden za drugim)
+                                p.shape.setPosition(player.getPosition() - (dir * ((float)i * 30.f)));
+
                                 p.pierceLeft = 1 + (w.level / 2);
                             }
-                            else if (w.def.id == AXE) {
-                                float xDir = (float)facingDir * 300.f + (i * 50.f * facingDir);
+                            else if (w.def->id == AXE) {
+                                // Axe rzucamy lekko rozrzucone na boki
+                                float xDir = (float)facingDir * 300.f + (i * 100.f * facingDir); // Zwiêkszamy rozrzut
                                 p.velocity = sf::Vector2f(xDir, -700.f - (i * 50.f));
                                 p.pierceLeft = 999;
                             }
-                            else if (w.def.id == BOOMERANG) {
+                            else if (w.def->id == BOOMERANG) {
                                 p.startPos = player.getPosition();
                                 sf::Vector2f target = player.getPosition() + sf::Vector2f(100, 0);
                                 if (!enemies.empty()) target = enemies[rand() % enemies.size()].shape.getPosition();
                                 p.velocity = normalize(target - player.getPosition()) * speed;
+                                // Lekki delay w pozycji dla bumerangu
+                                p.shape.setPosition(player.getPosition() - (p.velocity * ((float)i * 0.1f)));
                                 p.pierceLeft = 999;
                             }
-                            else if (w.def.id == BIBLE) {
-                                p.pierceLeft = 999; // Obs³u¿one w logice ruchu
+                            else if (w.def->id == BIBLE) {
+                                p.pierceLeft = 999;
+                                // LOGIKA BIBLII: Rozk³adamy równo po kole
+                                // i=0 (0st), i=1 (180st) dla amount=2
+                                float angleStep = 360.f / (float)amount; // Np. 360/2 = 180
+                                p.angleOffset = (float)i * angleStep;
                             }
-                            else if (w.def.id == FIRE_WAND) {
+                            else if (w.def->id == FIRE_WAND) {
                                 float angle = (float)(rand() % 360) * 3.14f / 180.f;
                                 p.velocity = sf::Vector2f(std::cos(angle), std::sin(angle)) * speed;
                                 p.pierceLeft = 999;
                             }
-                            else if (w.def.id == HOLY_WATER) {
+                            else if (w.def->id == HOLY_WATER) {
                                 float angle = (float)(rand() % 360);
                                 p.velocity = sf::Vector2f(std::cos(angle), std::sin(angle)) * speed;
-                                p.maxLifeTime = 0.5f; p.pierceLeft = 0;
-                            }
-                            else if (w.def.id == RUNETRACER) {
-                                p.isRunetracer = true; float angle = (float)(rand() % 360);
-                                p.velocity = sf::Vector2f(std::cos(angle), std::sin(angle)) * speed;
-                                p.pierceLeft = 999;
-                            }
-                            else if (w.def.id == LIGHTNING) {
-                                if (!enemies.empty()) {
-                                    int idx = rand() % enemies.size();
-                                    enemies[idx].shape.setPosition({ -9999, -9999 });
-                                    p.boxShape.setSize({ 20.f * sizeMult, (float)windowHeight });
-                                    p.boxShape.setFillColor(w.def.color); p.boxShape.setOrigin({ 10.f * sizeMult, (float)windowHeight });
-                                    p.boxShape.setPosition(enemies[idx].shape.getPosition()); p.maxLifeTime = 0.15f;
-
-                                    ExpOrb orb; orb.shape.setRadius(5.f); orb.shape.setFillColor(sf::Color::Cyan); orb.shape.setOrigin({ 5.f,5.f });
-                                    orb.shape.setPosition(enemies[idx].shape.getPosition()); orb.velocity = { 0,0 }; orb.value = 10;
-                                    expOrbs.push_back(orb);
-                                }
+                                p.maxLifeTime = 1.0f; p.pierceLeft = 0;
                             }
                         }
+
                         projectiles.push_back(p);
                     }
                 }
@@ -3198,7 +3492,7 @@ int main() {
                 p.lifeTime += dt;
                 bool dead = false;
 
-                if (p.lifeTime > p.maxLifeTime && p.wId != BIBLE) {
+                if (p.lifeTime > p.maxLifeTime) {
                     if (p.wId == HOLY_WATER) {
                         DamageZone z; z.wId = HOLY_WATER; z.maxLifeTime = 3.0f * pStats.duration;
                         z.damage = p.damage;
@@ -3225,8 +3519,15 @@ int main() {
                     else if (p.wId == BIBLE) {
                         float speed = 3.0f * pStats.speed;
                         float dist = 120.f * pStats.area;
-                        float angle = gameTime * speed + (p.lifeTime * 2.0f);
-                        p.shape.setPosition(player.getPosition() + sf::Vector2f(std::cos(angle) * dist, std::sin(angle) * dist));
+                        // Obliczamy k¹t w stopniach: Czas gry + Przesuniêcie dla tego konkretnego pocisku
+                        float baseAngle = gameTime * speed * 57.29f; // * 57.29 zamienia radiany na stopnie (opcjonalne, zale¿nie jak liczysz speed)
+                        // Proœciej:
+                        float finalAngleDegrees = (gameTime * 200.f) + p.angleOffset;
+
+                        // Zamiana na radiany do sin/cos
+                        float rad = finalAngleDegrees * 3.14159f / 180.f;
+
+                        p.shape.setPosition(player.getPosition() + sf::Vector2f(std::cos(rad) * dist, std::sin(rad) * dist));
                     }
                     else if (p.wId == WHIP) { p.boxShape.setPosition(player.getPosition()); }
                     else if (p.wId == LIGHTNING) {}
@@ -3256,18 +3557,16 @@ int main() {
                                 en.shape.setPosition(sf::Vector2f(-9000.f, -9000.f)); // Wyrzuæ poza mapê (do usuniêcia)
 
                                 // Drop XP
-                                ExpOrb orb;
-                                orb.shape.setRadius(5.f);
-                                orb.shape.setFillColor(sf::Color::Cyan);
-                                orb.shape.setOrigin(sf::Vector2f(5.f, 5.f));
-                                orb.shape.setPosition(deathPos);
+                                ExpOrb orb(expOrbTexture);
+                                // Ustawiamy pierwsz¹ klatkê (16x16)
+                                orb.sprite.setTextureRect(sf::IntRect({ 0, 0 }, {16, 16}));
+                                // Ustawiamy œrodek (po³owa z 16)
+                                orb.sprite.setOrigin(sf::Vector2f(8.f, 8.f));
+                                orb.sprite.setPosition(deathPos);
+
                                 float randX = (float)(rand() % 200 - 100);
                                 orb.velocity = { randX, -400.f };
-
-                                // Wiêcej XP za silniejszych wrogów
-                                if (en.maxHp >= 10.f) orb.value = 50;
-                                else if (en.maxHp >= 5.f) orb.value = 20;
-                                else orb.value = 10;
+                                orb.value = 10;
 
                                 expOrbs.push_back(orb);
 
@@ -3281,16 +3580,6 @@ int main() {
                                 en.shape.move(p.velocity * dt * 0.5f);
                             }
 
-                            // Obs³uga Runetracer i Przebicia (bez zmian)
-                            if (p.isRunetracer) {
-                                float minDist = 10000.f; sf::Vector2f nextT = player.getPosition();
-                                for (auto& other : enemies) {
-                                    if (other.id == en.id) continue;
-                                    float d = vectorLength(other.shape.getPosition() - p.shape.getPosition());
-                                    if (d < minDist) { minDist = d; nextT = other.shape.getPosition(); }
-                                }
-                                p.velocity = normalize(nextT - p.shape.getPosition()) * 800.f;
-                            }
                             if (p.pierceLeft > 0) p.pierceLeft--; else { dead = true; break; }
                         }
                     }
@@ -3298,7 +3587,7 @@ int main() {
                 if (dead) projectiles.erase(projectiles.begin() + i); else i++;
             }
 
-            // 5. STREFY OBRA¯EÑ
+            // 5. STREFY OBRA¯EÑ (Garlic, Holy Water)
             for (size_t i = 0; i < zones.size();) {
                 DamageZone& z = zones[i];
                 z.lifeTime += dt; z.tickTimer += dt;
@@ -3310,19 +3599,71 @@ int main() {
                     for (auto& en : enemies) {
                         if (z.shape.getGlobalBounds().findIntersection(en.shape.getGlobalBounds())) {
 
-                            sf::Vector2f deathPos = en.shape.getPosition(); // Zapisz pozycjê
-                            en.shape.setPosition({ -9000, -9000 });         // Usuñ wroga
+                            // 1. ZADAJ OBRA¯ENIA
+                            en.hp -= z.damage;
 
-                            ExpOrb orb;
-                            orb.shape.setRadius(5.f);
-                            orb.shape.setFillColor(sf::Color::Cyan);
-                            orb.shape.setOrigin({ 5.f,5.f });
+                            // 2. SPRAWD CZY UMAR£
+                            if (en.hp <= 0.f) {
+                                sf::Vector2f deathPos = en.shape.getPosition();
+                                en.shape.setPosition(sf::Vector2f(-9000.f, -9000.f)); // Wyrzuæ poza mapê
 
-                            orb.shape.setPosition(deathPos); // U¿yj deathPos
+                                // 3. STWÓRZ KULKÊ XP
+                                ExpOrb orb(expOrbTexture);
+                                orb.sprite.setTextureRect(sf::IntRect({ 0, 0 }, { 16, 16 })); // Klatka 1
+                                orb.sprite.setOrigin(sf::Vector2f(8.f, 8.f));
+                                orb.sprite.setPosition(deathPos);
 
-                            orb.velocity = { 0,0 };
-                            orb.value = 10;
-                            expOrbs.push_back(orb);
+                                float randX = (float)(rand() % 200 - 100);
+                                orb.velocity = { randX, -400.f }; // Lekki wyskok w górê
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                //DO ODSTRZA£U
+
+                                //DO ODSTRZA£U
+
+
+
+                                // Wartoœæ zale¿na od si³y wroga
+								orb.value = 10;
+                                //if (en.maxHp >= 10.f) orb.value = 50;
+                                //else if (en.maxHp >= 5.f) orb.value = 20;
+                                //else orb.value = 10;
+
+                                // Opcjonalny kolor dla lepszych kulek
+                                //if (orb.value > 10) orb.sprite.setColor(sf::Color::Yellow);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                expOrbs.push_back(orb);
+                            }
                         }
                     }
                 }
@@ -3351,7 +3692,7 @@ int main() {
                 // ZMIANA: Obs³uga obra¿eñ i œmierci
                 if (enemies[i].shape.getGlobalBounds().findIntersection(hitbox.getGlobalBounds()) && !isDying) {
                     float dmg = 1.0f;
-                    if (pStats.armor > 0) dmg -= (float)pStats.armor * 0.1f;
+                    if (pStats.armor > 0) dmg -= (float)pStats.armor;
                     if (dmg < 0.1f) dmg = 0.1f;
 
                     currentHp -= dmg;
@@ -3376,9 +3717,18 @@ int main() {
 
             // 7. EXP ORBS
             for (size_t i = 0; i < expOrbs.size();) {
+                // --- ANIMACJA KULKI ---
+                expOrbs[i].animTimer += dt;
+                if (expOrbs[i].animTimer >= 0.1f) { // Szybkoœæ animacji (co 0.1s)
+                    expOrbs[i].animTimer = 0.f;
+                    expOrbs[i].currentFrame = (expOrbs[i].currentFrame + 1) % 4; // 4 klatki
+
+                    expOrbs[i].sprite.setTextureRect(sf::IntRect({ expOrbs[i].currentFrame * 16, 0 }, { 16, 16 }));
+                }
+                // ----------------------
                 // Magnes
                 float magnetRange = pStats.magnet;
-                sf::Vector2f dirToP = hitbox.getPosition() - expOrbs[i].shape.getPosition();
+                sf::Vector2f dirToP = hitbox.getPosition() - expOrbs[i].sprite.getPosition();
                 if (vectorLength(dirToP) < magnetRange) {
                     expOrbs[i].velocity = normalize(dirToP) * 1200.f;
                     expOrbs[i].isOnGround = false;
@@ -3387,16 +3737,24 @@ int main() {
                     expOrbs[i].velocity.y += 1500.f * dt;
                 }
 
-                expOrbs[i].shape.move(expOrbs[i].velocity * dt);
+                expOrbs[i].sprite.move(expOrbs[i].velocity * dt);
 
-                if (expOrbs[i].shape.getPosition().y + 5.f > ground.getPosition().y) {
-                    expOrbs[i].shape.setPosition({ expOrbs[i].shape.getPosition().x, ground.getPosition().y - 5.f });
+                if (expOrbs[i].sprite.getPosition().y + 5.f > ground.getPosition().y) {
+                    expOrbs[i].sprite.setPosition({ expOrbs[i].sprite.getPosition().x, ground.getPosition().y - 5.f });
                     expOrbs[i].velocity.y = 0.f; expOrbs[i].velocity.x = 0.f; expOrbs[i].isOnGround = true;
                 }
 
-                if (expOrbs[i].shape.getGlobalBounds().findIntersection(hitbox.getGlobalBounds())) {
+                if (expOrbs[i].sprite.getGlobalBounds().findIntersection(hitbox.getGlobalBounds())) {
+					// ---- Muzyka Orbsowa ----
+                    float randomPitch = 0.8f + (float)(rand() % 40) / 100.f; // Zakres 0.8 - 1.2
+                    expSound.setPitch(randomPitch);
+
+                    expSound.play();
+                    // --------
+
                     exp += expOrbs[i].value;
                     if (exp >= nextExp) {
+                        levelUpSound.play();
                         exp -= nextExp;
                         nextExp = (int)(nextExp * 1.2f);
                         level++;
@@ -3409,13 +3767,14 @@ int main() {
 
                         if (weaponInventory.size() < 3) {
                             for (int k = 0; k < (int)weaponDB.size(); ++k) {
-                                bool has = false; for (auto& w : weaponInventory) if (w.def.id == weaponDB[k].id) has = true;
+                                bool has = false; 
+                                for (auto& w : weaponInventory) if (w.def->id == weaponDB[k].id) has = true;
                                 if (!has) pool.push_back({ 0, k });
                             }
                         }
                         for (auto& w : weaponInventory) {
                             if (w.level < 7) {
-                                for (int k = 0; k < (int)weaponDB.size(); ++k) if (weaponDB[k].id == w.def.id) pool.push_back({ 0, k });
+                                for (int k = 0; k < (int)weaponDB.size(); ++k) if (weaponDB[k].id == w.def->id) pool.push_back({ 0, k });
                             }
                         }
 
@@ -3456,11 +3815,31 @@ int main() {
                             bool isUp = false;
                             int nextLvl = 1;
 
-                            if (type == 0) { // Broñ
+                            if (type == 0) { // --- BROÑ ---
                                 titleStr = weaponDB[idx].name;
-                                descStr = weaponDB[idx].description;
                                 col = weaponDB[idx].color;
-                                for (auto& w : weaponInventory) if (w.def.id == weaponDB[idx].id) { isUp = true; nextLvl = w.level + 1; }
+
+                                // Sprawdzamy, czy mamy ju¿ tê broñ, ¿eby ustaliæ nastêpny poziom
+                                for (auto& w : weaponInventory) {
+                                    if (w.def->id == weaponDB[idx].id) {
+                                        isUp = true;
+                                        nextLvl = w.level + 1;
+                                        break;
+                                    }
+                                }
+
+                                // --- NAPRAWA B£ÊDU DESCRIPTION ---
+                                // Pobieramy opis z konkretnego poziomu z wektora 'levels'
+                                // Indeks to (nextLvl - 1), bo poziomy liczymy od 1, a tablice od 0.
+                                int levelIndex = nextLvl - 1;
+
+                                // Sprawdzamy czy taki poziom istnieje w bazie (zabezpieczenie)
+                                if (levelIndex < (int)weaponDB[idx].levels.size()) {
+                                    descStr = weaponDB[idx].levels[levelIndex].description;
+                                }
+                                else {
+                                    descStr = "Max Level Reached";
+                                }
                             }
                             else { // Pasywka
                                 titleStr = passiveDB[idx].name;
@@ -3493,6 +3872,17 @@ int main() {
                     i++;
                 }
             }
+            // 8. AKTUALIZACJA PORTALI
+            for (auto& p : portals) {
+                p.animTimer += dt;
+                if (p.animTimer >= 0.15f) { // Prêdkoœæ animacji
+                    p.animTimer = 0.f;
+                    p.currentFrame = (p.currentFrame + 1) % 6; // Mamy 6 klatek
+
+                    // Przesuwamy okno wyboru klatki o 16 pikseli (szerokoœæ jednej klatki)
+                    p.sprite.setTextureRect(sf::IntRect({ p.currentFrame * 32, 0 }, { 32, 32 }));
+                }
+            }
         }
 
         // --- RYSOWANIE ---
@@ -3507,8 +3897,11 @@ int main() {
             window.draw(background);
             window.draw(ground);
 
+            for (auto& p : portals) window.draw(p.sprite);
             for (auto& z : zones) window.draw(z.shape);
-            for (auto& o : expOrbs) window.draw(o.shape);
+
+            for (auto& z : zones) window.draw(z.shape);
+            for (auto& o : expOrbs) window.draw(o.sprite);
             for (auto& e : enemies) window.draw(e.shape);
             for (auto& p : projectiles) {
                 if (p.wId == WHIP || p.wId == LIGHTNING) window.draw(p.boxShape);
@@ -3554,7 +3947,7 @@ int main() {
             window.draw(timeText);
 
             std::string wList = "Bronie:\n";
-            for (auto& w : weaponInventory) wList += w.def.name + " " + std::to_string(w.level) + "\n";
+            for (auto& w : weaponInventory) wList += w.def->name + " " + std::to_string(w.level) + "\n";
             weaponsListText.setString(wList);
             window.draw(weaponsListText);
 
