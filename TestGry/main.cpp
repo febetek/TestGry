@@ -111,6 +111,7 @@ struct Projectile {
     std::vector<int> hitEnemies;
     float damage = 1.0f; // Obraøenia pocisku
     float angleOffset = 0.0f;
+    float baseSpeed = 0.0f;
 };
 
 struct DamageZone {
@@ -152,6 +153,74 @@ struct Portal {
     }
 };
 
+struct Lightning {
+
+    sf::Sprite sprite;
+    float animTimer = 0.0f;
+    int currentFrame = 0;
+    float lifeTime = 0.2f; // ile istnieje (sekundy)
+
+
+    Lightning(const sf::Texture& tex, sf::Vector2f pos): sprite(tex){
+        sprite.setTextureRect({ {0, 0}, {64, 64} });
+        sprite.setOrigin({ 16.f, 56.f });
+        sprite.setPosition(pos);
+        sprite.setScale({ 4.f, 4.f });
+
+    }
+};
+
+struct OchronaAnim {
+
+    sf::Sprite sprite;
+    float animTimer = 0.0f;
+    int currentFrame = 0;
+    float lifeTime = 2.0f; // ile animacja istnieje, np. 1 sekunda
+    int targetId = -1;
+
+    OchronaAnim(const sf::Texture& tex, sf::Vector2f pos): sprite(tex){
+        sprite.setTextureRect({ {0, 0}, {128, 128} });
+        sprite.setOrigin({ 63.f, 113.f });
+        sprite.setPosition(pos);
+        sprite.setScale({ 2.3f, 2.3f });
+    }
+};
+
+struct SzczurAnim {
+
+    sf::Sprite sprite;
+    float animTimer = 0.0f;
+    int currentFrame = 0;
+    float lifeTime = 2.0f; // ile animacja istnieje, np. 1 sekunda
+
+    int targetId = -1;
+
+    SzczurAnim(const sf::Texture& tex, sf::Vector2f pos): sprite(tex){
+        sprite.setTextureRect({ {0, 0}, {48, 48} });
+        sprite.setOrigin({ 25.f, 19.f });
+        sprite.setPosition(pos);
+        sprite.setScale({ 2.0f, 2.0f });
+    }
+};
+
+struct Scarf {
+    sf::Sprite sprite;
+    float animTimer = 0.0f;
+    int currentFrame = 0;
+    bool finished = false;
+
+    // Konstruktor teraz przyjmuje teø kierunek (dir)
+    Scarf(const sf::Texture& tex, sf::Vector2f pos, int dir) : sprite(tex) {
+        sprite.setTextureRect(sf::IntRect({ 0, 0 }, { 1024, 1024 }));
+        sprite.setOrigin({ 512.f, 512.f });
+        sprite.setPosition(pos + sf::Vector2f(0.f, -5.f)); // Od razu ustawiamy pozycjÍ z offsetem
+
+        // Ustawiamy skalÍ i kierunek na starcie
+        if (dir == -1) sprite.setScale({ -0.125f, 0.125f });
+        else sprite.setScale({ 0.125f, 0.125f });
+    }
+};
+
 // --- STRUKTURY UI ---
 
 struct WeaponButton {
@@ -185,19 +254,19 @@ void initWeaponDB() {
     whip.color = sf::Color(139, 69, 19);
     // LVL 1 (Bazowy)
     //                      damage, cooldown, duration, speed, area, amount, pierce, discription
-    whip.levels.push_back({ 10.f, 1.0f, 0.2f, 0.f, 1.0f, 1, 1, "Atakuje poziomo" });
+    whip.levels.push_back({ 10.f, 1.0f, 0.4f, 0.f, 1.0f, 1, 100, "Atakuje poziomo" });
     // LVL 2
-    whip.levels.push_back({ 10.f, 1.0f, 0.2f, 0.f, 1.0f, 2, 1, "Ilosc +1 (Atakuje tyl)" });
+    whip.levels.push_back({ 10.f, 1.0f, 0.4f, 0.f, 1.0f, 2, 100, "Ilosc +1 (Atakuje tyl)" });
     // LVL 3
-    whip.levels.push_back({ 15.f, 1.0f, 0.2f, 0.f, 1.0f, 2, 1,  "Obrazenia +5" });
+    whip.levels.push_back({ 15.f, 1.0f, 0.4f, 0.f, 1.0f, 2, 100,  "Obrazenia +5" });
 	// LVL 4
-    whip.levels.push_back({ 20.f, 1.0f, 0.2f, 0.f, 1.1f, 2, 1, "Obrazenia +5 i Obszar 10%" });
+    whip.levels.push_back({ 20.f, 1.0f, 0.4f, 0.f, 1.1f, 2, 100, "Obrazenia +5 i Obszar 10%" });
 	// LVL 5
-    whip.levels.push_back({ 25.f, 1.0f, 0.2f, 0.f, 1.1f, 2, 1, "Obrazenia +5" });
+    whip.levels.push_back({ 25.f, 1.0f, 0.4f, 0.f, 1.1f, 2, 100, "Obrazenia +5" });
 	// LVL 6
-    whip.levels.push_back({ 30.f, 1.0f, 0.2f, 0.f, 1.2f, 2, 1, "Obrazenia +5 i Obszar 10%" });
+    whip.levels.push_back({ 30.f, 1.0f, 0.4f, 0.f, 1.2f, 2, 100, "Obrazenia +5 i Obszar 10%" });
 	// LVL 7
-    whip.levels.push_back({ 35.f, 1.0f, 0.2f, 0.f, 1.2f, 2, 1, "Obrazenia +5" });
+    whip.levels.push_back({ 35.f, 1.0f, 0.4f, 0.f, 1.2f, 2, 100, "Obrazenia +5" });
     
     weaponDB.push_back(whip);
 
@@ -206,13 +275,13 @@ void initWeaponDB() {
     wand.name = "Piwo AGH-owskie";
     wand.color = sf::Color(0, 255, 255);
 
-    wand.levels.push_back({ 5.f, 1.0f, 3.0f, 600.f, 1.0f, 1, 1, "Strzela w najblizszego wroga" });
-    wand.levels.push_back({ 5.f, 1.0f, 3.0f, 600.f, 1.0f, 2, 1, "Ilosc +1" });
+    wand.levels.push_back({ 5.f, 1.0f, 3.0f, 600.f, 1.0f, 1, 0, "Strzela w najblizszego wroga" });
+    wand.levels.push_back({ 5.f, 1.0f, 3.0f, 600.f, 1.0f, 2, 1, "Ilosc +1 i przebicie +1" });
     wand.levels.push_back({ 5.f, 0.8f, 3.0f, 600.f, 1.0f, 2, 1, "Szybkostrzelnosc zwiekszona o 20%" });
     wand.levels.push_back({ 5.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 1, "Ilosc +1" });
-    wand.levels.push_back({ 10.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 1, "Obrazenia +5" });
-    wand.levels.push_back({ 15.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 1, "Obrazenia +5" });
-    wand.levels.push_back({ 15.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 1, "Przechodzi przez jednego wroga wiecej" });
+    wand.levels.push_back({ 10.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 2, "Obrazenia +5 przebicie +1" });
+    wand.levels.push_back({ 15.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 2, "Obrazenia +5" });
+    wand.levels.push_back({ 15.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 2, "Przechodzi przez jednego wroga wiecej" });
     weaponDB.push_back(wand);
 
 
@@ -225,9 +294,9 @@ void initWeaponDB() {
     knife.levels.push_back({ 3.f, 1.0f, 1.0f, 900.f, 1.0f, 2, 1, "Ilosc +1" });
     knife.levels.push_back({ 8.f, 1.0f, 1.0f, 900.f, 1.0f, 3, 1, "Ilosc +1 i obrazenia +5" });
     knife.levels.push_back({ 8.f, 1.0f, 1.0f, 900.f, 1.0f, 3, 1, "Przechodzi przez jednego wroga wiecej" });
-    knife.levels.push_back({ 8.f, 1.0f, 1.0f, 900.f, 1.0f, 4, 1, "Ilosc +1" });
-    knife.levels.push_back({ 13.f, 1.0f, 1.0f, 900.f, 1.0f, 4, 1, "Obrazenia +5" });
-    knife.levels.push_back({ 13.f, 1.0f, 1.0f, 900.f, 1.0f, 4, 1, "Przechodzi przez jednego wroga wiecej" });
+    knife.levels.push_back({ 8.f, 1.0f, 1.0f, 900.f, 1.0f, 4, 2, "Ilosc +1 przebicie +1" });
+    knife.levels.push_back({ 13.f, 1.0f, 1.0f, 900.f, 1.0f, 4, 2, "Obrazenia +5" });
+    knife.levels.push_back({ 13.f, 1.0f, 1.0f, 900.f, 1.0f, 4, 2, "Przechodzi przez jednego wroga wiecej" });
     weaponDB.push_back(knife);
 
     WeaponDef axe;
@@ -235,13 +304,13 @@ void initWeaponDB() {
     axe.name = "Krzeslo";
     axe.color = sf::Color(100, 100, 100);
 
-    axe.levels.push_back({ 20.f, 1.0f, 3.0f, 600.f, 1.0f, 1, 1, "Leci w gore po paraboli" });
-    axe.levels.push_back({ 20.f, 1.0f, 3.0f, 600.f, 1.0f, 2, 1, "Ilosc +1" });
-    axe.levels.push_back({ 40.f, 1.0f, 3.0f, 600.f, 1.0f, 2, 1, "Obrazenia +20" });
-    axe.levels.push_back({ 40.f, 1.0f, 3.0f, 600.f, 1.0f, 3, 1, "Ilosc +1" });
-    axe.levels.push_back({ 60.f, 1.0f, 3.0f, 600.f, 1.0f, 3, 1, "Obrazenia +20" });
-    axe.levels.push_back({ 80.f, 1.0f, 3.0f, 600.f, 1.0f, 3, 1, "Obrazenia +20" });
-    axe.levels.push_back({ 80.f, 1.0f, 3.0f, 600.f, 1.5f, 3, 1, "Obszar zwiekszony o 50%" });
+    axe.levels.push_back({ 20.f, 1.5f, 3.0f, 500.f, 1.0f, 1, 5, "Leci w gore po paraboli" });
+    axe.levels.push_back({ 20.f, 1.5f, 3.0f, 500.f, 1.0f, 2, 5, "Ilosc +1" });
+    axe.levels.push_back({ 40.f, 1.5f, 3.0f, 500.f, 1.0f, 2, 5, "Obrazenia +20" });
+    axe.levels.push_back({ 40.f, 1.5f, 3.0f, 500.f, 1.0f, 3, 5, "Ilosc +1" });
+    axe.levels.push_back({ 60.f, 1.5f, 3.0f, 500.f, 1.0f, 3, 5, "Obrazenia +20" });
+    axe.levels.push_back({ 80.f, 1.5f, 3.0f, 500.f, 1.0f, 3, 10, "Obrazenia +20 przebicie +5" });
+    axe.levels.push_back({ 80.f, 1.5f, 3.0f, 500.f, 1.5f, 3, 10, "Obszar zwiekszony o 50%" });
     weaponDB.push_back(axe);
 
     WeaponDef banan;
@@ -252,10 +321,10 @@ void initWeaponDB() {
     banan.levels.push_back({ 5.f, 1.0f, 2.0f, 600.f, 1.0f, 1, 1, "Leci i wraca jak bumerang" });
     banan.levels.push_back({ 10.f, 1.0f, 2.0f, 600.f, 1.0f, 1, 1, "Obrazenia +5" });
     banan.levels.push_back({ 10.f, 1.0f, 2.0f, 750.f, 1.1f, 1, 1, "Obszar zwiekszony o 10% i szybkosc o 25%" });
-    banan.levels.push_back({ 10.f, 1.0f, 2.0f, 750.f, 1.1f, 2, 1, "Ilosc +1" });
-    banan.levels.push_back({ 15.f, 1.0f, 2.0f, 750.f, 1.1f, 2, 1, "Obrazenia +5" });
-    banan.levels.push_back({ 15.f, 1.0f, 2.0f, 937.5f, 1.2f, 2, 1, "Obszar zwiekszony o 10% i szybkosc o 25%" });
-    banan.levels.push_back({ 15.f, 1.0f, 2.0f, 937.5f, 1.2f, 3, 1, "Ilosc +1" });
+    banan.levels.push_back({ 10.f, 1.0f, 2.0f, 750.f, 1.1f, 2, 2, "Ilosc +1 przebicie +1" });
+    banan.levels.push_back({ 15.f, 1.0f, 2.0f, 750.f, 1.1f, 2, 2, "Obrazenia +5" });
+    banan.levels.push_back({ 15.f, 1.0f, 2.0f, 937.5f, 1.2f, 2, 2, "Obszar zwiekszony o 10% i szybkosc o 25%" });
+    banan.levels.push_back({ 15.f, 1.0f, 2.0f, 937.5f, 1.2f, 3, 3, "Ilosc +1 przebicie +1" });
     weaponDB.push_back(banan);
 
 
@@ -264,13 +333,13 @@ void initWeaponDB() {
     bible.name = "Podrecznik do analizy";
     bible.color = sf::Color(255, 255, 0);
 
-    bible.levels.push_back({ 10.f, 1.0f, 3.0f, 600.f, 1.0f, 1, 1, "Orbituje wokol ciebie" });
-    bible.levels.push_back({ 10.f, 1.0f, 3.0f, 600.f, 1.0f, 2, 1, "Ilosc +1" });
-    bible.levels.push_back({ 10.f, 1.0f, 3.0f, 780.f, 1.25f, 2, 1, "Obszar zwiekszony o 25% i szybkosc o 30%" });
-    bible.levels.push_back({ 15.f, 1.0f, 3.0f, 780.f, 1.25f, 2, 1, "Obrazenia +5" });
-    bible.levels.push_back({ 15.f, 1.0f, 3.0f, 780.f, 1.25f, 3, 1, "Ilosc +1" });
-    bible.levels.push_back({ 15.f, 1.0f, 3.0f, 1014.f, 1.50f, 3, 1, "Obszar zwiekszony o 25% i szybkosc o 30%" });
-    bible.levels.push_back({ 20.f, 1.0f, 3.0f, 1014.f, 1.50f, 3, 1, "Obrazenia +5" });
+    bible.levels.push_back({ 10.f, 1.0f, 3.0f, 600.f, 1.0f, 1, 100, "Orbituje wokol ciebie" });
+    bible.levels.push_back({ 10.f, 1.0f, 3.0f, 600.f, 1.0f, 2, 100, "Ilosc +1" });
+    bible.levels.push_back({ 10.f, 1.0f, 3.0f, 780.f, 1.25f, 2, 100, "Obszar zwiekszony o 25% i szybkosc o 30%" });
+    bible.levels.push_back({ 15.f, 1.0f, 3.0f, 780.f, 1.25f, 2, 100, "Obrazenia +5" });
+    bible.levels.push_back({ 15.f, 1.0f, 3.0f, 780.f, 1.25f, 3, 100, "Ilosc +1" });
+    bible.levels.push_back({ 15.f, 1.0f, 3.0f, 1014.f, 1.50f, 3, 100, "Obszar zwiekszony o 25% i szybkosc o 30%" });
+    bible.levels.push_back({ 20.f, 1.0f, 3.0f, 1014.f, 1.50f, 3, 100, "Obrazenia +5" });
     weaponDB.push_back(bible);
 
 
@@ -280,12 +349,12 @@ void initWeaponDB() {
     metal.color = sf::Color(255, 69, 0);
 
     metal.levels.push_back({ 20.f, 1.0f, 3.0f, 200.f, 1.0f, 3, 1, "Potezne pociski" });
-    metal.levels.push_back({ 30.f, 1.0f, 3.0f, 200.f, 1.0f, 3, 1, "Obrazenia +10" });
-    metal.levels.push_back({ 40.f, 1.0f, 3.0f, 200.f, 1.0f, 4, 1, "Obrazenia +10 i ilosc +1" });
-    metal.levels.push_back({ 50.f, 1.0f, 3.0f, 240.f, 1.0f, 4, 1, "Obrazenia +10 i szybkosc o 20%" });
-    metal.levels.push_back({ 60.f, 1.0f, 3.0f, 240.f, 1.0f, 4, 1, "Obrazenia +10" });
-    metal.levels.push_back({ 70.f, 1.0f, 3.0f, 288.f, 1.0f, 4, 1, "Obrazenia +10 i szybkosc o 20%" });
-    metal.levels.push_back({ 80.f, 1.0f, 3.0f, 288.f, 1.0f, 6, 1, "Obrazenia +10 i ilosc +2" });
+    metal.levels.push_back({ 30.f, 1.0f, 3.0f, 200.f, 1.0f, 3, 3, "Obrazenia +10 przebicie +2" });
+    metal.levels.push_back({ 40.f, 1.0f, 3.0f, 200.f, 1.0f, 4, 3, "Obrazenia +10 i ilosc +1" });
+    metal.levels.push_back({ 50.f, 1.0f, 3.0f, 240.f, 1.0f, 4, 3, "Obrazenia +10 i szybkosc o 20%" });
+    metal.levels.push_back({ 60.f, 1.0f, 3.0f, 240.f, 1.0f, 4, 5, "Obrazenia +10 przebicie +2" });
+    metal.levels.push_back({ 70.f, 1.0f, 3.0f, 288.f, 1.0f, 4, 5, "Obrazenia +10 i szybkosc o 20%" });
+    metal.levels.push_back({ 80.f, 1.0f, 3.0f, 288.f, 1.0f, 6, 5, "Obrazenia +10 i ilosc +2" });
     weaponDB.push_back(metal);
 
 
@@ -309,13 +378,13 @@ void initWeaponDB() {
     flask.name = "Fiolka z laboratorium";
     flask.color = sf::Color(0, 100, 255);
 
-    flask.levels.push_back({ 15.f, 1.0f, 2.0f, 100.f, 1.0f, 1, 1, "Tworzy plame" });
-    flask.levels.push_back({ 15.f, 1.0f, 2.0f, 100.f, 1.0f, 2, 1, "Ilosc +1" });
-    flask.levels.push_back({ 25.f, 1.0f, 2.5f, 100.f, 1.0f, 2, 1, "Efekt trwa 0,5s dluzej i obrazenia +10" });
-    flask.levels.push_back({ 25.f, 1.0f, 2.5f, 100.f, 1.2f, 3, 1, "Ilosc +1 i obszar zwiekszony o 20%" });
-    flask.levels.push_back({ 25.f, 1.0f, 2.8f, 100.f, 1.2f, 3, 1, "Efekt trwa 0,3s dluzej" });
-    flask.levels.push_back({ 35.f, 1.0f, 2.8f, 100.f, 1.2f, 3, 1, "Obrazenia +10" });
-    flask.levels.push_back({ 50.f, 1.0f, 3.3f, 100.f, 1.2f, 4, 1, "Efekt trwa 0,5s dluzej, ilosc +1 i obr +15" });
+    flask.levels.push_back({ 15.f, 1.0f, 2.0f, 100.f, 1.0f, 1, 0, "Tworzy plame" });
+    flask.levels.push_back({ 15.f, 1.0f, 2.0f, 100.f, 1.0f, 2, 0, "Ilosc +1" });
+    flask.levels.push_back({ 25.f, 1.0f, 2.5f, 100.f, 1.0f, 2, 0, "Efekt trwa 0,5s dluzej i obrazenia +10" });
+    flask.levels.push_back({ 25.f, 1.0f, 2.5f, 100.f, 1.2f, 3, 0, "Ilosc +1 i obszar zwiekszony o 20%" });
+    flask.levels.push_back({ 25.f, 1.0f, 2.8f, 100.f, 1.2f, 3, 0, "Efekt trwa 0,3s dluzej" });
+    flask.levels.push_back({ 35.f, 1.0f, 2.8f, 100.f, 1.2f, 3, 0, "Obrazenia +10" });
+    flask.levels.push_back({ 50.f, 1.0f, 3.3f, 100.f, 1.2f, 4, 0, "Efekt trwa 0,5s dluzej, ilosc +1 i obr +15" });
     weaponDB.push_back(flask);
 
 
@@ -323,13 +392,13 @@ void initWeaponDB() {
     lightning.id = LIGHTNING;
     lightning.name = "Piorun";
     lightning.color = sf::Color::Yellow;
-    lightning.levels.push_back({ 5.f, 1.0f, 0.2f, 0.f, 1.0f, 1, 1, "Razi losowych wrogow" });
-    lightning.levels.push_back({ 7.f, 1.0f, 0.2f, 0.f, 1.0f, 1, 1, "Obrazenia +2" });
-    lightning.levels.push_back({ 7.f, 1.0f, 0.2f, 0.f, 1.0f, 2, 1, "Ilosc +1" });
-    lightning.levels.push_back({ 7.f, 0.8f, 0.2f, 0.f, 1.0f, 2, 1, "Szybkostrzelnosc zwiekszona o 20%" });
-    lightning.levels.push_back({ 8.f, 0.8f, 0.2f, 0.f, 1.0f, 2, 1, "Obrazenia +1" });
-    lightning.levels.push_back({ 10.f, 0.8f, 0.2f, 0.f, 1.0f, 2, 1, "Obrazenia +2" });
-    lightning.levels.push_back({ 10.f, 0.8f, 0.2f, 0.f, 1.0f, 3, 1, "Ilosc +1" });
+    lightning.levels.push_back({ 5.f, 1.0f, 0.2f, 0.f, 1.0f, 1, 100, "Razi losowych wrogow" });
+    lightning.levels.push_back({ 7.f, 1.0f, 0.2f, 0.f, 1.0f, 1, 100, "Obrazenia +2" });
+    lightning.levels.push_back({ 7.f, 1.0f, 0.2f, 0.f, 1.0f, 2, 100, "Ilosc +1" });
+    lightning.levels.push_back({ 7.f, 0.8f, 0.2f, 0.f, 1.0f, 2, 100, "Szybkostrzelnosc zwiekszona o 20%" });
+    lightning.levels.push_back({ 8.f, 0.8f, 0.2f, 0.f, 1.0f, 2, 100, "Obrazenia +1" });
+    lightning.levels.push_back({ 10.f, 0.8f, 0.2f, 0.f, 1.0f, 2, 100, "Obrazenia +2" });
+    lightning.levels.push_back({ 10.f, 0.8f, 0.2f, 0.f, 1.0f, 3, 100, "Ilosc +1" });
     weaponDB.push_back(lightning);
 }
 
@@ -424,6 +493,94 @@ PlayerStats recalculateStats(const std::vector<ActivePassive>& passives) {
     if (stats.cooldown < 0.1f) stats.cooldown = 0.1f;
     return stats;
 }
+// Funkcja do przypisywania klawiszy
+
+void keyBindingsFunction(
+    RenderWindow& window,
+    Sound& clickSound,
+    Text& buttonText,
+    Keyboard::Scancode& keyVariable,
+    const String& actionName,
+    float targetX,
+    float targetY,
+    const Drawable& controlsTitle,
+    bool& isFullscreen,
+    unsigned int winWidth,
+    unsigned int winHeight,
+    Vector2f mousePos){
+    if (buttonText.getGlobalBounds().contains(mousePos)){
+        clickSound.play();
+        Texture screenshotTexture;
+        if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
+        Sprite tlo(screenshotTexture);
+        tlo.setColor(Color(50, 50, 50));
+        bool inControls = true;
+        while (window.isOpen() && inControls){
+            Vector2f mousePos = (Vector2f)Mouse::getPosition(window);
+            while (const optional event = window.pollEvent()){
+                if (event->is<Event::Closed>()){
+                    clickSound.play();
+                    inControls = false;
+                }
+                else if (const auto* key = event->getIf<Event::KeyPressed>()){
+                    if (key->scancode == Keyboard::Scancode::Escape){
+                        inControls = false;
+                    }
+                    // opcja usuniÍcia przypisania klawisza 
+                    else if (key->scancode == Keyboard::Scancode::Delete){
+                        keyVariable = Keyboard::Scancode::Unknown;
+                        inControls = false;
+                    }
+                    // moøliwoúÊ zmienienia fullscreen na tryb okienkowy i odwrotnie za pomocπ klawisza F11
+                    else if (key->scancode == Keyboard::Scancode::F11)                    {
+                        isFullscreen = !isFullscreen;
+                        window.close();
+                        if (isFullscreen) window.create(VideoMode::getDesktopMode(), "Projekt PI", Style::Default, State::Fullscreen);
+                        else window.create(VideoMode({ winWidth, winHeight }), "Projekt PI", Style::Default, State::Windowed);
+                        window.setFramerateLimit(140);
+                    }
+                    // warunek, aby gra nie reagowa≥a na klikniÍcie okreúlonych klawiszy przy przypisywaniu klawiszy
+                    else if (
+                        key->scancode == Keyboard::Scancode::PrintScreen ||
+                        key->scancode == Keyboard::Scancode::ScrollLock ||
+                        key->scancode == Keyboard::Scancode::Pause ||
+                        key->scancode == Keyboard::Scancode::Insert ||
+                        key->scancode == Keyboard::Scancode::Home ||
+                        key->scancode == Keyboard::Scancode::PageUp ||
+                        key->scancode == Keyboard::Scancode::End ||
+                        key->scancode == Keyboard::Scancode::PageDown
+                        )
+                    {
+
+                    }
+                    // przypisywanie klawiszy
+                    else
+                    {
+                        keyVariable = key->scancode;
+                        inControls = false;
+                    }
+                }
+            }
+            window.clear(Color(0x808080FF));
+            window.draw(tlo);
+            window.draw(controlsTitle);
+            window.display();
+        }
+        String newKeyName;
+        // zmiana nazwy klawisza po wciúniÍciu Delete
+        if (keyVariable == Keyboard::Scancode::Unknown){
+            newKeyName = L"Unknown";
+        }
+        // zmiana nazwy klawisza po przypisaniu okreúlonego klawisza
+        else{
+            newKeyName = Keyboard::getDescription(keyVariable);
+        }
+        // zmiana nazwy klawisza i wycentrowanie tekstu 
+        buttonText.setString(actionName + L" (" + newKeyName + L")");
+        centerText(buttonText, targetX, targetY);
+    }
+
+}
 
 int main() {
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
@@ -439,7 +596,11 @@ int main() {
     bool isFullscreen = false;
 
     sf::Texture bgTexture;
-    if (!bgTexture.loadFromFile("sprites/background.png")) return -1;
+    if (!bgTexture.loadFromFile("sprites/background.png")) { 
+		std::cout << "Brak pliku background.png!" << std::endl;
+        return -1; 
+    }
+
     sf::Sprite background(bgTexture);
     float mapWidth = (float)bgTexture.getSize().x;
 
@@ -447,37 +608,106 @@ int main() {
 
     // wczytywanie czcionki
     sf::Font font;
-    if (!font.openFromFile("czcionka/arial.ttf")) return -1;
+    if (!font.openFromFile("czcionka/arial.ttf")) {
+		std::cout << "Brak pliku arial.ttf!" << std::endl;
+        return -1;
+	}
 
     // PORTAl
     sf::Texture portalTexture;
     if (!portalTexture.loadFromFile("animacje/portal.png")) {
         std::cout << "Brak pliku portal.png!" << std::endl;
+		return -1;
     }
-
-    // TWORZENIE PORTALI
     std::vector<Portal> portals;
-
-    // WysokoúÊ spawnu (na ziemi)
-    // ground.getPosition().y to gÛra pod≥ogi. Odejmujemy np. 60, øeby portal sta≥ na ziemi, a nie w niej.
-    // Musisz mieÊ dostÍp do zmiennej 'ground' w tym miejscu, albo wpisz na sztywno np. windowHeight - 80.f
     float portalY = windowHeight - 85.f;
 
-    // Lewy portal (na poczπtku mapy)
-    portals.emplace_back(portalTexture, 100.f, portalY);
-
-    // Prawy portal (na koÒcu mapy)
-    portals.emplace_back(portalTexture, mapWidth - 100.f, portalY);
-
+    portals.emplace_back(portalTexture, 100.f, portalY);// Lewy portal (na poczπtku mapy)
+    portals.emplace_back(portalTexture, mapWidth - 100.f, portalY);// Prawy portal (na koÒcu mapy)
     // -------------
 
     sf::Texture expOrbTexture;
-    if (!expOrbTexture.loadFromFile("animacje/exp_orb.png")) return -1;
+    if (!expOrbTexture.loadFromFile("animacje/exp_orb.png")) {
+		std::cout << "Brak pliku exp_orb.png!" << std::endl;
+        return -1;
+    }
 
-    // --- AUDIO  ---                                             //********************************************
+    sf::Texture piorunTexture;
+    if (!piorunTexture.loadFromFile("animacje/piorun.png")) {
+        std::cout << "Brak pliku piorun.png!" << std::endl;
+		return -1;
+    }
+    std::vector<Lightning> lightnings;
+
+    sf::Texture ochronaTexture;
+    if (!ochronaTexture.loadFromFile("animacje/ochrona.png")) {
+        std::cout << "Brak pliku ochrona.png!" << std::endl;
+		return - 1;
+    }
+    std::vector<OchronaAnim>Ochrona;
+
+    sf::Texture szczurTexture;
+    if (!szczurTexture.loadFromFile("animacje/szczur.png")) {
+        std::cout << "Brak pliku szczur.png!" << std::endl;
+		return - 1;
+    }
+    std::vector<SzczurAnim>Szczur;
+
+    sf::Texture szalikTexture;
+    if (!szalikTexture.loadFromFile("animacje/szalik.png")) { 
+		std::cout << "Brak pliku szalik.png!" << std::endl;
+        return-1;
+    }
+    std::vector<Scarf> szalik;
+
+
+    sf::Texture olowekTexture;
+    if (!olowekTexture.loadFromFile("sprites/olowek.png")) {
+        std::cout << "Brak pliku olowek.png!" << std::endl;
+        return-1;
+    }
+
+    sf::Texture krzesloTexture;
+    if (!krzesloTexture.loadFromFile("sprites/krzeslo.png")) {
+        std::cout << "Brak pliku krzeslo.png!" << std::endl;
+        return-1;
+    }
+
+    sf::Texture ksiazkaTexture;
+    if (!ksiazkaTexture.loadFromFile("sprites/ksiazka.png")) {
+        std::cout << "Brak pliku ksiazka.png!" << std::endl;
+        return-1;
+    }
+
+    sf::Texture piwoTexture;
+    if (!piwoTexture.loadFromFile("sprites/piwo.png")) {
+        std::cout << "Brak pliku piwo.png!" << std::endl;
+        return-1;
+    }
+
+    sf::Texture potkaTexture;
+    if (!potkaTexture.loadFromFile("sprites/potka.png")) {
+        std::cout << "Brak pliku potka.png!" << std::endl;
+        return-1;
+    }
+
+    sf::Texture stalTexture;
+    if (!stalTexture.loadFromFile("sprites/stal.png")) {
+        std::cout << "Brak pliku stal.png!" << std::endl;
+        return-1;
+    }
+
+	sf::Texture bananTexture;
+    if(!bananTexture.loadFromFile("sprites/banan.png")) {
+        std::cout << "Brak pliku banan.png!" << std::endl;
+        return-1;
+	}
+
+    //       --- AUDIO  ---
     sf::Music bgMusic;
     if (!bgMusic.openFromFile("dzwieki/music.ogg")) {
         std::cout << "Brak pliku music.ogg!" << std::endl;
+		return -1;
     }
     float musicScale = 30.0f;
     bgMusic.setLooping(true); // <--- ZMIANA: setLooping zamiast setLoop                // ustawienia muzyki
@@ -486,11 +716,13 @@ int main() {
     sf::SoundBuffer jumpBuffer;
     if (!jumpBuffer.loadFromFile("dzwieki/jump_sound.wav")) {
         std::cout << "Brak pliku jump_sound.wav!" << std::endl;
+		return -1;
     }
 
     sf::SoundBuffer expBuffer;
     if (!expBuffer.loadFromFile("dzwieki/exp.wav")) {
         std::cout << "Brak pliku exp.wav!" << std::endl;
+		return -1;
     }
     sf::Sound expSound(expBuffer);
     expSound.setVolume(15.f);
@@ -502,6 +734,7 @@ int main() {
     sf::SoundBuffer clickBuffer;
     if (!clickBuffer.loadFromFile("dzwieki/click.wav")) {
         std::cout << "Brak pliku click.wav!" << std::endl;
+		return -1;
     }
     sf::Sound clickSound(clickBuffer);
     clickSound.setVolume(sfxScale);                                                     // ustawienia g≥oúnoúci klikniÍcia
@@ -509,6 +742,7 @@ int main() {
     sf::SoundBuffer gameOverBuffer;
     if (!gameOverBuffer.loadFromFile("dzwieki/game_over.ogg")) {
         std::cout << "Brak pliku game_over.ogg!" << std::endl;
+		return -1;
     }
     sf::Sound gameOverSound(gameOverBuffer); // Konstruktor SFML 3.0                                                        // ustawienia düwiÍku gameover
     gameOverSound.setVolume(sfxScale * 1.5f);
@@ -516,6 +750,7 @@ int main() {
     sf::SoundBuffer levelUpBuffer;
     if (!levelUpBuffer.loadFromFile("dzwieki/levelup.wav")) {
         std::cout << "Brak pliku levelup.wav!" << std::endl;
+		return -1;
     }
     sf::Sound levelUpSound(levelUpBuffer);
     levelUpSound.setVolume(60.f);
@@ -710,9 +945,9 @@ int main() {
     Keyboard::Scancode keyLeft3 = Keyboard::Scancode::Unknown;
 
     // --- Sterowanie (mechanicznie) BIEG ---
-    Keyboard::Scancode keyRun1 = Keyboard::Scancode::Down;
-    Keyboard::Scancode keyRun2 = Keyboard::Scancode::S;
-    Keyboard::Scancode keyRun3 = Keyboard::Scancode::LShift;
+    Keyboard::Scancode keyRun1 = Keyboard::Scancode::LShift;
+    Keyboard::Scancode keyRun2 = Keyboard::Scancode::RShift;
+    Keyboard::Scancode keyRun3 = Keyboard::Scancode::S;
 
     // --- Sterowanie (mechanicznie) PRAWO ---
     Keyboard::Scancode keyRight1 = Keyboard::Scancode::Right;
@@ -1062,1078 +1297,13 @@ int main() {
                                                             window.setFramerateLimit(140);
                                                         }
                                                     }
-                                                    // klikniÍcie SKOK 1
                                                     if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
                                                     {
                                                         if (mouseBtn->button == Mouse::Button::Left)
                                                         {
-                                                            if (Jump1.getGlobalBounds().contains(mousePos))
-                                                            {
-                                                                clickSound.play();
 
-                                                                Texture screenshotTexture;
-                                                                if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
-                                                                Sprite tlo(screenshotTexture);
+                                                            // klikniÍcie ZRESETUJ
 
-                                                                tlo.setColor(Color(50, 50, 50));
-
-                                                                bool inControls = true;
-
-                                                                while (window.isOpen() && inControls)
-                                                                {
-                                                                    sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
-
-                                                                    while (const optional event = window.pollEvent())
-                                                                    {
-                                                                        if (event->is<Event::Closed>())
-                                                                        {
-                                                                            clickSound.play();
-                                                                            inControls = false;
-                                                                        }
-                                                                        else if (const auto* key = event->getIf<Event::KeyPressed>())
-                                                                        {
-                                                                            if (key->scancode == Keyboard::Scancode::Escape)
-                                                                            {
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::Delete)
-                                                                            {
-                                                                                keyJump1 = Keyboard::Scancode::Unknown;
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::F11) {
-                                                                                isFullscreen = !isFullscreen;
-                                                                                window.close();
-                                                                                if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt PI", sf::Style::Default, sf::State::Fullscreen);
-                                                                                else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
-                                                                                window.setFramerateLimit(140);
-                                                                            }
-                                                                            else if (
-                                                                                key->scancode == Keyboard::Scancode::PrintScreen ||
-                                                                                key->scancode == Keyboard::Scancode::ScrollLock ||
-                                                                                key->scancode == Keyboard::Scancode::Pause ||
-                                                                                key->scancode == Keyboard::Scancode::Insert ||
-                                                                                key->scancode == Keyboard::Scancode::Home ||
-                                                                                key->scancode == Keyboard::Scancode::PageUp ||
-                                                                                key->scancode == Keyboard::Scancode::End ||
-                                                                                key->scancode == Keyboard::Scancode::PageDown ||
-                                                                                key->scancode == Keyboard::Scancode::F11
-                                                                                )
-                                                                            {
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                keyJump1 = key->scancode;
-                                                                                inControls = false;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    window.clear(Color(0x808080FF));
-
-                                                                    window.draw(tlo);
-                                                                    window.draw(ControlsTitle);
-
-                                                                    window.display();
-                                                                }
-                                                                String newKeyName;
-
-                                                                if (keyJump1 == Keyboard::Scancode::Unknown)
-                                                                {
-                                                                    newKeyName = L"Unknown";
-                                                                }
-                                                                else
-                                                                {
-                                                                    newKeyName = Keyboard::getDescription(keyJump1);
-                                                                }
-
-                                                                Jump1.setString(L"SKOK (" + newKeyName + ")");
-                                                                centerText(Jump1, windowWidth / 2.0f - 500.0f, windowHeight / 2.0f - 250.0f);
-                                                            }
-                                                        }
-                                                    }
-                                                    // klikniÍcie SKOK 2
-                                                    if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
-                                                    {
-                                                        if (mouseBtn->button == Mouse::Button::Left)
-                                                        {
-                                                            if (Jump2.getGlobalBounds().contains(mousePos))
-                                                            {
-                                                                clickSound.play();
-
-                                                                Texture screenshotTexture;
-                                                                if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
-                                                                Sprite tlo(screenshotTexture);
-
-                                                                tlo.setColor(Color(50, 50, 50));
-
-                                                                bool inControls = true;
-
-                                                                while (window.isOpen() && inControls)
-                                                                {
-                                                                    sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
-
-                                                                    while (const optional event = window.pollEvent())
-                                                                    {
-                                                                        if (event->is<Event::Closed>())
-                                                                        {
-                                                                            clickSound.play();
-                                                                            inControls = false;
-                                                                        }
-                                                                        else if (const auto* key = event->getIf<Event::KeyPressed>())
-                                                                        {
-                                                                            if (key->scancode == Keyboard::Scancode::Escape)
-                                                                            {
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::Delete)
-                                                                            {
-                                                                                keyJump2 = Keyboard::Scancode::Unknown;
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::F11) {
-                                                                                isFullscreen = !isFullscreen;
-                                                                                window.close();
-                                                                                if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt PI", sf::Style::Default, sf::State::Fullscreen);
-                                                                                else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
-                                                                                window.setFramerateLimit(140);
-                                                                            }
-                                                                            else if (
-                                                                                key->scancode == Keyboard::Scancode::PrintScreen ||
-                                                                                key->scancode == Keyboard::Scancode::ScrollLock ||
-                                                                                key->scancode == Keyboard::Scancode::Pause ||
-                                                                                key->scancode == Keyboard::Scancode::Insert ||
-                                                                                key->scancode == Keyboard::Scancode::Home ||
-                                                                                key->scancode == Keyboard::Scancode::PageUp ||
-                                                                                key->scancode == Keyboard::Scancode::End ||
-                                                                                key->scancode == Keyboard::Scancode::PageDown ||
-                                                                                key->scancode == Keyboard::Scancode::F11
-                                                                                )
-                                                                            {
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                keyJump2 = key->scancode;
-                                                                                inControls = false;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    window.clear(Color(0x808080FF));
-
-                                                                    window.draw(tlo);
-                                                                    window.draw(ControlsTitle);
-
-                                                                    window.display();
-                                                                }
-                                                                String newKeyName;
-
-                                                                if (keyJump2 == Keyboard::Scancode::Unknown)
-                                                                {
-                                                                    newKeyName = L"Unknown";
-                                                                }
-                                                                else
-                                                                {
-                                                                    newKeyName = Keyboard::getDescription(keyJump2);
-                                                                }
-
-                                                                Jump2.setString(L"SKOK (" + newKeyName + ")");
-                                                                centerText(Jump2, windowWidth / 2.0f, windowHeight / 2.0f - 250.0f);
-                                                            }
-                                                        }
-                                                    }
-                                                    // klikniÍcie SKOK 3
-                                                    if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
-                                                    {
-                                                        if (mouseBtn->button == Mouse::Button::Left)
-                                                        {
-                                                            if (Jump3.getGlobalBounds().contains(mousePos))
-                                                            {
-                                                                clickSound.play();
-
-                                                                Texture screenshotTexture;
-                                                                if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
-                                                                Sprite tlo(screenshotTexture);
-
-                                                                tlo.setColor(Color(50, 50, 50));
-
-                                                                bool inControls = true;
-
-                                                                while (window.isOpen() && inControls)
-                                                                {
-                                                                    sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
-
-                                                                    while (const optional event = window.pollEvent())
-                                                                    {
-                                                                        if (event->is<Event::Closed>())
-                                                                        {
-                                                                            clickSound.play();
-                                                                            inControls = false;
-                                                                        }
-                                                                        else if (const auto* key = event->getIf<Event::KeyPressed>())
-                                                                        {
-                                                                            if (key->scancode == Keyboard::Scancode::Escape)
-                                                                            {
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::Delete)
-                                                                            {
-                                                                                keyJump3 = Keyboard::Scancode::Unknown;
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::F11) {
-                                                                                isFullscreen = !isFullscreen;
-                                                                                window.close();
-                                                                                if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt PI", sf::Style::Default, sf::State::Fullscreen);
-                                                                                else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
-                                                                                window.setFramerateLimit(140);
-                                                                            }
-                                                                            else if (
-                                                                                key->scancode == Keyboard::Scancode::PrintScreen ||
-                                                                                key->scancode == Keyboard::Scancode::ScrollLock ||
-                                                                                key->scancode == Keyboard::Scancode::Pause ||
-                                                                                key->scancode == Keyboard::Scancode::Insert ||
-                                                                                key->scancode == Keyboard::Scancode::Home ||
-                                                                                key->scancode == Keyboard::Scancode::PageUp ||
-                                                                                key->scancode == Keyboard::Scancode::End ||
-                                                                                key->scancode == Keyboard::Scancode::PageDown ||
-                                                                                key->scancode == Keyboard::Scancode::F11
-                                                                                )
-                                                                            {
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                keyJump3 = key->scancode;
-                                                                                inControls = false;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    window.clear(Color(0x808080FF));
-
-                                                                    window.draw(tlo);
-                                                                    window.draw(ControlsTitle);
-
-                                                                    window.display();
-                                                                }
-                                                                String newKeyName;
-
-                                                                if (keyJump3 == Keyboard::Scancode::Unknown)
-                                                                {
-                                                                    newKeyName = L"Unknown";
-                                                                }
-                                                                else
-                                                                {
-                                                                    newKeyName = Keyboard::getDescription(keyJump3);
-                                                                }
-
-                                                                Jump3.setString(L"SKOK (" + newKeyName + ")");
-                                                                centerText(Jump3, windowWidth / 2.0f + 500.0f, windowHeight / 2.0f - 250.0f);
-                                                            }
-                                                        }
-                                                    }
-                                                    // klikniÍcie PRAWO 1
-                                                    if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
-                                                    {
-                                                        if (mouseBtn->button == Mouse::Button::Left)
-                                                        {
-                                                            if (Right1.getGlobalBounds().contains(mousePos))
-                                                            {
-                                                                clickSound.play();
-
-                                                                Texture screenshotTexture;
-                                                                if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
-                                                                Sprite tlo(screenshotTexture);
-
-                                                                tlo.setColor(Color(50, 50, 50));
-
-                                                                bool inControls = true;
-
-                                                                while (window.isOpen() && inControls)
-                                                                {
-                                                                    sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
-
-                                                                    while (const optional event = window.pollEvent())
-                                                                    {
-                                                                        if (event->is<Event::Closed>())
-                                                                        {
-                                                                            clickSound.play();
-                                                                            inControls = false;
-                                                                        }
-                                                                        else if (const auto* key = event->getIf<Event::KeyPressed>())
-                                                                        {
-                                                                            if (key->scancode == Keyboard::Scancode::Escape)
-                                                                            {
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::Delete)
-                                                                            {
-                                                                                keyRight1 = Keyboard::Scancode::Unknown;
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::F11) {
-                                                                                isFullscreen = !isFullscreen;
-                                                                                window.close();
-                                                                                if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt PI", sf::Style::Default, sf::State::Fullscreen);
-                                                                                else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
-                                                                                window.setFramerateLimit(140);
-                                                                            }
-                                                                            else if (
-                                                                                key->scancode == Keyboard::Scancode::PrintScreen ||
-                                                                                key->scancode == Keyboard::Scancode::ScrollLock ||
-                                                                                key->scancode == Keyboard::Scancode::Pause ||
-                                                                                key->scancode == Keyboard::Scancode::Insert ||
-                                                                                key->scancode == Keyboard::Scancode::Home ||
-                                                                                key->scancode == Keyboard::Scancode::PageUp ||
-                                                                                key->scancode == Keyboard::Scancode::End ||
-                                                                                key->scancode == Keyboard::Scancode::PageDown ||
-                                                                                key->scancode == Keyboard::Scancode::F11
-                                                                                )
-                                                                            {
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                keyRight1 = key->scancode;
-                                                                                inControls = false;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    window.clear(Color(0x808080FF));
-
-                                                                    window.draw(tlo);
-                                                                    window.draw(ControlsTitle);
-
-                                                                    window.display();
-                                                                }
-                                                                String newKeyName;
-
-                                                                if (keyRight1 == Keyboard::Scancode::Unknown)
-                                                                {
-                                                                    newKeyName = L"Unknown";
-                                                                }
-                                                                else
-                                                                {
-                                                                    newKeyName = Keyboard::getDescription(keyRight1);
-                                                                }
-
-                                                                Right1.setString(L"PRAWO (" + newKeyName + ")");
-                                                                centerText(Right1, windowWidth / 2.0f - 500.0f, windowHeight / 2.0f + 50.0f);
-                                                            }
-                                                        }
-                                                    }
-                                                    // klikniÍcie PRAWO 2
-                                                    if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
-                                                    {
-                                                        if (mouseBtn->button == Mouse::Button::Left)
-                                                        {
-                                                            if (Right2.getGlobalBounds().contains(mousePos))
-                                                            {
-                                                                clickSound.play();
-
-                                                                Texture screenshotTexture;
-                                                                if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
-                                                                Sprite tlo(screenshotTexture);
-
-                                                                tlo.setColor(Color(50, 50, 50));
-
-                                                                bool inControls = true;
-
-                                                                while (window.isOpen() && inControls)
-                                                                {
-                                                                    sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
-
-                                                                    while (const optional event = window.pollEvent())
-                                                                    {
-                                                                        if (event->is<Event::Closed>())
-                                                                        {
-                                                                            clickSound.play();
-                                                                            inControls = false;
-                                                                        }
-                                                                        else if (const auto* key = event->getIf<Event::KeyPressed>())
-                                                                        {
-                                                                            if (key->scancode == Keyboard::Scancode::Escape)
-                                                                            {
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::Delete)
-                                                                            {
-                                                                                keyRight2 = Keyboard::Scancode::Unknown;
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::F11) {
-                                                                                isFullscreen = !isFullscreen;
-                                                                                window.close();
-                                                                                if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt PI", sf::Style::Default, sf::State::Fullscreen);
-                                                                                else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
-                                                                                window.setFramerateLimit(140);
-                                                                            }
-                                                                            else if (
-                                                                                key->scancode == Keyboard::Scancode::PrintScreen ||
-                                                                                key->scancode == Keyboard::Scancode::ScrollLock ||
-                                                                                key->scancode == Keyboard::Scancode::Pause ||
-                                                                                key->scancode == Keyboard::Scancode::Insert ||
-                                                                                key->scancode == Keyboard::Scancode::Home ||
-                                                                                key->scancode == Keyboard::Scancode::PageUp ||
-                                                                                key->scancode == Keyboard::Scancode::End ||
-                                                                                key->scancode == Keyboard::Scancode::PageDown ||
-                                                                                key->scancode == Keyboard::Scancode::F11
-                                                                                )
-                                                                            {
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                keyRight2 = key->scancode;
-                                                                                inControls = false;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    window.clear(Color(0x808080FF));
-
-                                                                    window.draw(tlo);
-                                                                    window.draw(ControlsTitle);
-
-                                                                    window.display();
-                                                                }
-                                                                String newKeyName;
-
-                                                                if (keyRight2 == Keyboard::Scancode::Unknown)
-                                                                {
-                                                                    newKeyName = L"Unknown";
-                                                                }
-                                                                else
-                                                                {
-                                                                    newKeyName = Keyboard::getDescription(keyRight2);
-                                                                }
-
-                                                                Right2.setString(L"PRAWO (" + newKeyName + ")");
-                                                                centerText(Right2, windowWidth / 2.0f, windowHeight / 2.0f + 50.0f);
-                                                            }
-                                                        }
-                                                    }
-                                                    // klikniÍcie PRAWO 3
-                                                    if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
-                                                    {
-                                                        if (mouseBtn->button == Mouse::Button::Left)
-                                                        {
-                                                            if (Right3.getGlobalBounds().contains(mousePos))
-                                                            {
-                                                                clickSound.play();
-
-                                                                Texture screenshotTexture;
-                                                                if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
-                                                                Sprite tlo(screenshotTexture);
-
-                                                                tlo.setColor(Color(50, 50, 50));
-
-                                                                bool inControls = true;
-
-                                                                while (window.isOpen() && inControls)
-                                                                {
-                                                                    sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
-
-                                                                    while (const optional event = window.pollEvent())
-                                                                    {
-                                                                        if (event->is<Event::Closed>())
-                                                                        {
-                                                                            clickSound.play();
-                                                                            inControls = false;
-                                                                        }
-                                                                        else if (const auto* key = event->getIf<Event::KeyPressed>())
-                                                                        {
-                                                                            if (key->scancode == Keyboard::Scancode::Escape)
-                                                                            {
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::Delete)
-                                                                            {
-                                                                                keyRight3 = Keyboard::Scancode::Unknown;
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::F11) {
-                                                                                isFullscreen = !isFullscreen;
-                                                                                window.close();
-                                                                                if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt PI", sf::Style::Default, sf::State::Fullscreen);
-                                                                                else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
-                                                                                window.setFramerateLimit(140);
-                                                                            }
-                                                                            else if (
-                                                                                key->scancode == Keyboard::Scancode::PrintScreen ||
-                                                                                key->scancode == Keyboard::Scancode::ScrollLock ||
-                                                                                key->scancode == Keyboard::Scancode::Pause ||
-                                                                                key->scancode == Keyboard::Scancode::Insert ||
-                                                                                key->scancode == Keyboard::Scancode::Home ||
-                                                                                key->scancode == Keyboard::Scancode::PageUp ||
-                                                                                key->scancode == Keyboard::Scancode::End ||
-                                                                                key->scancode == Keyboard::Scancode::PageDown ||
-                                                                                key->scancode == Keyboard::Scancode::F11
-                                                                                )
-                                                                            {
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                keyRight3 = key->scancode;
-                                                                                inControls = false;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    window.clear(Color(0x808080FF));
-
-                                                                    window.draw(tlo);
-                                                                    window.draw(ControlsTitle);
-
-                                                                    window.display();
-                                                                }
-                                                                String newKeyName;
-
-                                                                if (keyRight3 == Keyboard::Scancode::Unknown)
-                                                                {
-                                                                    newKeyName = L"Unknown";
-                                                                }
-                                                                else
-                                                                {
-                                                                    newKeyName = Keyboard::getDescription(keyRight3);
-                                                                }
-
-                                                                Right3.setString(L"PRAWO (" + newKeyName + ")");
-                                                                centerText(Right3, windowWidth / 2.0f + 500.0f, windowHeight / 2.0f + 50.0f);
-                                                            }
-                                                        }
-                                                    }
-                                                    // klikniÍcie LEWO 1
-                                                    if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
-                                                    {
-                                                        if (mouseBtn->button == Mouse::Button::Left)
-                                                        {
-                                                            if (Left1.getGlobalBounds().contains(mousePos))
-                                                            {
-                                                                clickSound.play();
-
-                                                                Texture screenshotTexture;
-                                                                if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
-                                                                Sprite tlo(screenshotTexture);
-
-                                                                tlo.setColor(Color(50, 50, 50));
-
-                                                                bool inControls = true;
-
-                                                                while (window.isOpen() && inControls)
-                                                                {
-                                                                    sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
-
-                                                                    while (const optional event = window.pollEvent())
-                                                                    {
-                                                                        if (event->is<Event::Closed>())
-                                                                        {
-                                                                            clickSound.play();
-                                                                            inControls = false;
-                                                                        }
-                                                                        else if (const auto* key = event->getIf<Event::KeyPressed>())
-                                                                        {
-                                                                            if (key->scancode == Keyboard::Scancode::Escape)
-                                                                            {
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::Delete)
-                                                                            {
-                                                                                keyLeft1 = Keyboard::Scancode::Unknown;
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::F11) {
-                                                                                isFullscreen = !isFullscreen;
-                                                                                window.close();
-                                                                                if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt PI", sf::Style::Default, sf::State::Fullscreen);
-                                                                                else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
-                                                                                window.setFramerateLimit(140);
-                                                                            }
-                                                                            else if (
-                                                                                key->scancode == Keyboard::Scancode::PrintScreen ||
-                                                                                key->scancode == Keyboard::Scancode::ScrollLock ||
-                                                                                key->scancode == Keyboard::Scancode::Pause ||
-                                                                                key->scancode == Keyboard::Scancode::Insert ||
-                                                                                key->scancode == Keyboard::Scancode::Home ||
-                                                                                key->scancode == Keyboard::Scancode::PageUp ||
-                                                                                key->scancode == Keyboard::Scancode::End ||
-                                                                                key->scancode == Keyboard::Scancode::PageDown ||
-                                                                                key->scancode == Keyboard::Scancode::F11
-                                                                                )
-                                                                            {
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                keyLeft1 = key->scancode;
-                                                                                inControls = false;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    window.clear(Color(0x808080FF));
-
-                                                                    window.draw(tlo);
-                                                                    window.draw(ControlsTitle);
-
-                                                                    window.display();
-                                                                }
-                                                                String newKeyName;
-
-                                                                if (keyLeft1 == Keyboard::Scancode::Unknown)
-                                                                {
-                                                                    newKeyName = L"Unknown";
-                                                                }
-                                                                else
-                                                                {
-                                                                    newKeyName = Keyboard::getDescription(keyLeft1);
-                                                                }
-
-                                                                Left1.setString(L"LEWO (" + newKeyName + ")");
-                                                                centerText(Left1, windowWidth / 2.0f - 500.0f, windowHeight / 2.0f - 150.0f);
-                                                            }
-                                                        }
-                                                    }
-                                                    // klikniÍcie LEWO 2
-                                                    if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
-                                                    {
-                                                        if (mouseBtn->button == Mouse::Button::Left)
-                                                        {
-                                                            if (Left2.getGlobalBounds().contains(mousePos))
-                                                            {
-                                                                clickSound.play();
-
-                                                                Texture screenshotTexture;
-                                                                if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
-                                                                Sprite tlo(screenshotTexture);
-
-                                                                tlo.setColor(Color(50, 50, 50));
-
-                                                                bool inControls = true;
-
-                                                                while (window.isOpen() && inControls)
-                                                                {
-                                                                    sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
-
-                                                                    while (const optional event = window.pollEvent())
-                                                                    {
-                                                                        if (event->is<Event::Closed>())
-                                                                        {
-                                                                            clickSound.play();
-                                                                            inControls = false;
-                                                                        }
-                                                                        else if (const auto* key = event->getIf<Event::KeyPressed>())
-                                                                        {
-                                                                            if (key->scancode == Keyboard::Scancode::Escape)
-                                                                            {
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::Delete)
-                                                                            {
-                                                                                keyLeft2 = Keyboard::Scancode::Unknown;
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::F11) {
-                                                                                isFullscreen = !isFullscreen;
-                                                                                window.close();
-                                                                                if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt PI", sf::Style::Default, sf::State::Fullscreen);
-                                                                                else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
-                                                                                window.setFramerateLimit(140);
-                                                                            }
-                                                                            else if (
-                                                                                key->scancode == Keyboard::Scancode::PrintScreen ||
-                                                                                key->scancode == Keyboard::Scancode::ScrollLock ||
-                                                                                key->scancode == Keyboard::Scancode::Pause ||
-                                                                                key->scancode == Keyboard::Scancode::Insert ||
-                                                                                key->scancode == Keyboard::Scancode::Home ||
-                                                                                key->scancode == Keyboard::Scancode::PageUp ||
-                                                                                key->scancode == Keyboard::Scancode::End ||
-                                                                                key->scancode == Keyboard::Scancode::PageDown ||
-                                                                                key->scancode == Keyboard::Scancode::F11
-                                                                                )
-                                                                            {
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                keyLeft2 = key->scancode;
-                                                                                inControls = false;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    window.clear(Color(0x808080FF));
-
-                                                                    window.draw(tlo);
-                                                                    window.draw(ControlsTitle);
-
-                                                                    window.display();
-                                                                }
-                                                                String newKeyName;
-
-                                                                if (keyLeft2 == Keyboard::Scancode::Unknown)
-                                                                {
-                                                                    newKeyName = L"Unknown";
-                                                                }
-                                                                else
-                                                                {
-                                                                    newKeyName = Keyboard::getDescription(keyLeft2);
-                                                                }
-
-                                                                Left2.setString(L"LEWO (" + newKeyName + ")");
-                                                                centerText(Left2, windowWidth / 2.0f, windowHeight / 2.0f - 150.0f);
-                                                            }
-                                                        }
-                                                    }
-                                                    // klikniÍcie LEWO 3
-                                                    if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
-                                                    {
-                                                        if (mouseBtn->button == Mouse::Button::Left)
-                                                        {
-                                                            if (Left3.getGlobalBounds().contains(mousePos))
-                                                            {
-                                                                clickSound.play();
-
-                                                                Texture screenshotTexture;
-                                                                if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
-                                                                Sprite tlo(screenshotTexture);
-
-                                                                tlo.setColor(Color(50, 50, 50));
-
-                                                                bool inControls = true;
-
-                                                                while (window.isOpen() && inControls)
-                                                                {
-                                                                    sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
-
-                                                                    while (const optional event = window.pollEvent())
-                                                                    {
-                                                                        if (event->is<Event::Closed>())
-                                                                        {
-                                                                            clickSound.play();
-                                                                            inControls = false;
-                                                                        }
-                                                                        else if (const auto* key = event->getIf<Event::KeyPressed>())
-                                                                        {
-                                                                            if (key->scancode == Keyboard::Scancode::Escape)
-                                                                            {
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::Delete)
-                                                                            {
-                                                                                keyLeft3 = Keyboard::Scancode::Unknown;
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::F11) {
-                                                                                isFullscreen = !isFullscreen;
-                                                                                window.close();
-                                                                                if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt PI", sf::Style::Default, sf::State::Fullscreen);
-                                                                                else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
-                                                                                window.setFramerateLimit(140);
-                                                                            }
-                                                                            else if (
-                                                                                key->scancode == Keyboard::Scancode::PrintScreen ||
-                                                                                key->scancode == Keyboard::Scancode::ScrollLock ||
-                                                                                key->scancode == Keyboard::Scancode::Pause ||
-                                                                                key->scancode == Keyboard::Scancode::Insert ||
-                                                                                key->scancode == Keyboard::Scancode::Home ||
-                                                                                key->scancode == Keyboard::Scancode::PageUp ||
-                                                                                key->scancode == Keyboard::Scancode::End ||
-                                                                                key->scancode == Keyboard::Scancode::PageDown ||
-                                                                                key->scancode == Keyboard::Scancode::F11
-                                                                                )
-                                                                            {
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                keyLeft3 = key->scancode;
-                                                                                inControls = false;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    window.clear(Color(0x808080FF));
-
-                                                                    window.draw(tlo);
-                                                                    window.draw(ControlsTitle);
-
-                                                                    window.display();
-                                                                }
-                                                                String newKeyName;
-
-                                                                if (keyLeft3 == Keyboard::Scancode::Unknown)
-                                                                {
-                                                                    newKeyName = L"Unknown";
-                                                                }
-                                                                else
-                                                                {
-                                                                    newKeyName = Keyboard::getDescription(keyLeft3);
-                                                                }
-
-                                                                Left3.setString(L"LEWO (" + newKeyName + ")");
-                                                                centerText(Left3, windowWidth / 2.0f + 500.0f, windowHeight / 2.0f - 150.0f);
-                                                            }
-                                                        }
-                                                    }
-                                                    // klikniÍcie BIEG 1
-                                                    if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
-                                                    {
-                                                        if (mouseBtn->button == Mouse::Button::Left)
-                                                        {
-                                                            if (Run1.getGlobalBounds().contains(mousePos))
-                                                            {
-                                                                clickSound.play();
-
-                                                                Texture screenshotTexture;
-                                                                if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
-                                                                Sprite tlo(screenshotTexture);
-
-                                                                tlo.setColor(Color(50, 50, 50));
-
-                                                                bool inControls = true;
-
-                                                                while (window.isOpen() && inControls)
-                                                                {
-                                                                    sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
-
-                                                                    while (const optional event = window.pollEvent())
-                                                                    {
-                                                                        if (event->is<Event::Closed>())
-                                                                        {
-                                                                            clickSound.play();
-                                                                            inControls = false;
-                                                                        }
-                                                                        else if (const auto* key = event->getIf<Event::KeyPressed>())
-                                                                        {
-                                                                            if (key->scancode == Keyboard::Scancode::Escape)
-                                                                            {
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::Delete)
-                                                                            {
-                                                                                keyRun1 = Keyboard::Scancode::Unknown;
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::F11) {
-                                                                                isFullscreen = !isFullscreen;
-                                                                                window.close();
-                                                                                if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt PI", sf::Style::Default, sf::State::Fullscreen);
-                                                                                else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
-                                                                                window.setFramerateLimit(140);
-                                                                            }
-                                                                            else if (
-                                                                                key->scancode == Keyboard::Scancode::PrintScreen ||
-                                                                                key->scancode == Keyboard::Scancode::ScrollLock ||
-                                                                                key->scancode == Keyboard::Scancode::Pause ||
-                                                                                key->scancode == Keyboard::Scancode::Insert ||
-                                                                                key->scancode == Keyboard::Scancode::Home ||
-                                                                                key->scancode == Keyboard::Scancode::PageUp ||
-                                                                                key->scancode == Keyboard::Scancode::End ||
-                                                                                key->scancode == Keyboard::Scancode::PageDown ||
-                                                                                key->scancode == Keyboard::Scancode::F11
-                                                                                )
-                                                                            {
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                keyRun1 = key->scancode;
-                                                                                inControls = false;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    window.clear(Color(0x808080FF));
-
-                                                                    window.draw(tlo);
-                                                                    window.draw(ControlsTitle);
-
-                                                                    window.display();
-                                                                }
-                                                                String newKeyName;
-
-                                                                if (keyRun1 == Keyboard::Scancode::Unknown)
-                                                                {
-                                                                    newKeyName = L"Unknown";
-                                                                }
-                                                                else
-                                                                {
-                                                                    newKeyName = Keyboard::getDescription(keyRun1);
-                                                                }
-
-                                                                Run1.setString(L"BIEG (" + newKeyName + ")");
-                                                                centerText(Run1, windowWidth / 2.0f - 500.0f, windowHeight / 2.0f - 50.0f);
-                                                            }
-                                                        }
-                                                    }
-                                                    // klikniÍcie BIEG 2
-                                                    if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
-                                                    {
-                                                        if (mouseBtn->button == Mouse::Button::Left)
-                                                        {
-                                                            if (Run2.getGlobalBounds().contains(mousePos))
-                                                            {
-                                                                clickSound.play();
-
-                                                                Texture screenshotTexture;
-                                                                if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
-                                                                Sprite tlo(screenshotTexture);
-
-                                                                tlo.setColor(Color(50, 50, 50));
-
-                                                                bool inControls = true;
-
-                                                                while (window.isOpen() && inControls)
-                                                                {
-                                                                    sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
-
-                                                                    while (const optional event = window.pollEvent())
-                                                                    {
-                                                                        if (event->is<Event::Closed>())
-                                                                        {
-                                                                            clickSound.play();
-                                                                            inControls = false;
-                                                                        }
-                                                                        else if (const auto* key = event->getIf<Event::KeyPressed>())
-                                                                        {
-                                                                            if (key->scancode == Keyboard::Scancode::Escape)
-                                                                            {
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::Delete)
-                                                                            {
-                                                                                keyRun2 = Keyboard::Scancode::Unknown;
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::F11) {
-                                                                                isFullscreen = !isFullscreen;
-                                                                                window.close();
-                                                                                if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt PI", sf::Style::Default, sf::State::Fullscreen);
-                                                                                else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
-                                                                                window.setFramerateLimit(140);
-                                                                            }
-                                                                            else if (
-                                                                                key->scancode == Keyboard::Scancode::PrintScreen ||
-                                                                                key->scancode == Keyboard::Scancode::ScrollLock ||
-                                                                                key->scancode == Keyboard::Scancode::Pause ||
-                                                                                key->scancode == Keyboard::Scancode::Insert ||
-                                                                                key->scancode == Keyboard::Scancode::Home ||
-                                                                                key->scancode == Keyboard::Scancode::PageUp ||
-                                                                                key->scancode == Keyboard::Scancode::End ||
-                                                                                key->scancode == Keyboard::Scancode::PageDown ||
-                                                                                key->scancode == Keyboard::Scancode::F11
-                                                                                )
-                                                                            {
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                keyRun2 = key->scancode;
-                                                                                inControls = false;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    window.clear(Color(0x808080FF));
-
-                                                                    window.draw(tlo);
-                                                                    window.draw(ControlsTitle);
-
-                                                                    window.display();
-                                                                }
-                                                                String newKeyName;
-
-                                                                if (keyRun2 == Keyboard::Scancode::Unknown)
-                                                                {
-                                                                    newKeyName = L"Unknown";
-                                                                }
-                                                                else
-                                                                {
-                                                                    newKeyName = Keyboard::getDescription(keyRun2);
-                                                                }
-
-                                                                Run2.setString(L"BIEG (" + newKeyName + ")");
-                                                                centerText(Run2, windowWidth / 2.0f, windowHeight / 2.0f - 50.0f);
-                                                            }
-                                                        }
-                                                    }
-                                                    // klikniÍcie BIEG 3
-                                                    if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
-                                                    {
-                                                        if (mouseBtn->button == Mouse::Button::Left)
-                                                        {
-                                                            if (Run3.getGlobalBounds().contains(mousePos))
-                                                            {
-                                                                clickSound.play();
-
-                                                                Texture screenshotTexture;
-                                                                if (screenshotTexture.resize(window.getSize())) screenshotTexture.update(window);
-                                                                Sprite tlo(screenshotTexture);
-
-                                                                tlo.setColor(Color(50, 50, 50));
-
-                                                                bool inControls = true;
-
-                                                                while (window.isOpen() && inControls)
-                                                                {
-                                                                    sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
-
-                                                                    while (const optional event = window.pollEvent())
-                                                                    {
-                                                                        if (event->is<Event::Closed>())
-                                                                        {
-                                                                            clickSound.play();
-                                                                            inControls = false;
-                                                                        }
-                                                                        else if (const auto* key = event->getIf<Event::KeyPressed>())
-                                                                        {
-                                                                            if (key->scancode == Keyboard::Scancode::Escape)
-                                                                            {
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::Delete)
-                                                                            {
-                                                                                keyRun3 = Keyboard::Scancode::Unknown;
-                                                                                inControls = false;
-                                                                            }
-                                                                            else if (key->scancode == Keyboard::Scancode::F11) {
-                                                                                isFullscreen = !isFullscreen;
-                                                                                window.close();
-                                                                                if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "Projekt PI", sf::Style::Default, sf::State::Fullscreen);
-                                                                                else window.create(sf::VideoMode({ windowWidth, windowHeight }), "Projekt PI", sf::Style::Default, sf::State::Windowed);
-                                                                                window.setFramerateLimit(140);
-                                                                            }
-                                                                            else if (
-                                                                                key->scancode == Keyboard::Scancode::PrintScreen ||
-                                                                                key->scancode == Keyboard::Scancode::ScrollLock ||
-                                                                                key->scancode == Keyboard::Scancode::Pause ||
-                                                                                key->scancode == Keyboard::Scancode::Insert ||
-                                                                                key->scancode == Keyboard::Scancode::Home ||
-                                                                                key->scancode == Keyboard::Scancode::PageUp ||
-                                                                                key->scancode == Keyboard::Scancode::End ||
-                                                                                key->scancode == Keyboard::Scancode::PageDown ||
-                                                                                key->scancode == Keyboard::Scancode::F11
-                                                                                )
-                                                                            {
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                keyRun3 = key->scancode;
-                                                                                inControls = false;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    window.clear(Color(0x808080FF));
-
-                                                                    window.draw(tlo);
-                                                                    window.draw(ControlsTitle);
-
-                                                                    window.display();
-                                                                }
-                                                                String newKeyName;
-
-                                                                if (keyRun3 == Keyboard::Scancode::Unknown)
-                                                                {
-                                                                    newKeyName = L"Unknown";
-                                                                }
-                                                                else
-                                                                {
-                                                                    newKeyName = Keyboard::getDescription(keyRun3);
-                                                                }
-
-                                                                Run3.setString(L"BIEG (" + newKeyName + ")");
-                                                                centerText(Run3, windowWidth / 2.0f + 500.0f, windowHeight / 2.0f - 50.0f);
-                                                            }
-                                                        }
-                                                    }
-                                                    if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
-                                                    {
-                                                        if (mouseBtn->button == Mouse::Button::Left)
-                                                        {
                                                             if (keyBindingsReset.getGlobalBounds().contains(mousePos))
                                                             {
                                                                 clickSound.play();
@@ -2147,9 +1317,9 @@ int main() {
                                                                 keyLeft2 = Keyboard::Scancode::A;
                                                                 keyLeft3 = Keyboard::Scancode::Unknown;
 
-                                                                keyRun1 = Keyboard::Scancode::Down;
-                                                                keyRun2 = Keyboard::Scancode::S;
-                                                                keyRun3 = Keyboard::Scancode::LShift;
+                                                                keyRun1 = Keyboard::Scancode::LShift;
+                                                                keyRun2 = Keyboard::Scancode::RShift;
+                                                                keyRun3 = Keyboard::Scancode::S;
 
                                                                 keyRight1 = Keyboard::Scancode::Right;
                                                                 keyRight2 = Keyboard::Scancode::D;
@@ -2618,7 +1788,8 @@ int main() {
                     //***********
 
                     if (menuExit.getGlobalBounds().contains(mousePos)) {
-                        // Opcjonalnie: ma≥a pauza, øeby düwiÍk zdπøy≥ wybrzmieÊ przed zamkniÍciem                                             
+                        // Opcjonalnie: ma≥a pauza, øeby düwiÍk zdπøy≥ wybrzmieÊ przed zamkniÍciem         
+                        clickSound.play();                                   
                         sf::sleep(sf::milliseconds(150));
                         window.close();
                         return 0;
@@ -3160,13 +2331,13 @@ int main() {
             // ZMIANA: Pozwalamy na sterowanie TYLKO jeúli postaÊ NIE umiera
             if (!isDying) {
                 float currentSpeed = pStats.moveSpeed;
-                if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::RShift)) && onGround) {
+                if ((sf::Keyboard::isKeyPressed(keyRun1) || sf::Keyboard::isKeyPressed(keyRun2) || sf::Keyboard::isKeyPressed(keyRun3)) && onGround) {
                     currentSpeed *= 1.7f;
                 }
 
                 // 1. Sprawdzamy co jest wciúniÍte
-                bool pressingLeft = sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Left);
-                bool pressingRight = sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Right);
+                bool pressingLeft = sf::Keyboard::isKeyPressed(keyLeft1) || sf::Keyboard::isKeyPressed(keyLeft2) || sf::Keyboard::isKeyPressed(keyLeft3);
+                bool pressingRight = sf::Keyboard::isKeyPressed(keyRight1) || sf::Keyboard::isKeyPressed(keyRight2) || sf::Keyboard::isKeyPressed(keyRight3);
 
                 // 2. Wykonujemy ruch TYLKO jeúli nie wciskamy obu naraz
                 if (pressingLeft && !pressingRight) {
@@ -3188,7 +2359,7 @@ int main() {
                 // Jeúli oba sπ wciúniÍte (pressingLeft && pressingRight), 
                 // kod powyøej siÍ nie wykona, velocity.x zostanie 0.f, a postaÊ stanie w Idle.
 
-                if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Space)) && onGround) {
+                if ((sf::Keyboard::isKeyPressed(keyJump1) || sf::Keyboard::isKeyPressed(keyJump2) || sf::Keyboard::isKeyPressed(keyJump3)) && onGround) {
                     velocity.y = jumpForce;
                     onGround = false;
                     isTurning = false;
@@ -3286,12 +2457,16 @@ int main() {
                 if (enemyType == 0) { // Podstawowy
                     e.hp = 1.0f; e.maxHp = 1.0f;
                     e.shape.setRadius(25.f);
-                    e.shape.setFillColor(sf::Color::Magenta); // RÛøowy
+                    e.shape.setFillColor(sf::Color::Red);                                                                              //--------------------------
+                    Szczur.emplace_back(szczurTexture, e.shape.getPosition());
+                    Szczur.back().targetId = e.id;
                 }
                 else if (enemyType == 1) { // åredni (od 2 min)
                     e.hp = 15.0f; e.maxHp = 15.0f;
                     e.shape.setRadius(30.f);
-                    e.shape.setFillColor(sf::Color::Cyan); // B≥Íkitny
+                    e.shape.setFillColor(sf::Color::Blue);                                                                              //--------------------------
+                    Ochrona.emplace_back(ochronaTexture, e.shape.getPosition());
+                    Ochrona.back().targetId = e.id;
                     // Opcjonalnie wolniejszy? (logika prÍdkoúci jest niøej w pÍtli ruchu)
                 }
                 else if (enemyType == 2) { // Twardy (od 4 min)
@@ -3355,9 +2530,11 @@ int main() {
                     // Logika Amount (Baza z poziomu + Bonus gracza)
                     // Np. Whip lvl 3 ma w bazie amount=2.
                     int amount = stats.amount + pStats.amount;
+                    if (w.def->id == WHIP) {
+                        // Tworzymy animacjÍ szalika w miejscu gracza
+                        szalik.emplace_back(szalikTexture, player.getPosition(), facingDir);
+                    }
 
-                    // Specjalne zasady (jeúli chcesz zablokowaÊ duplikator dla niektÛrych broni)
-                    // if (w.def->id == GARLIC) amount = 1; 
 
                     for (int i = 0; i < amount; ++i) {
                         Projectile p;
@@ -3368,24 +2545,39 @@ int main() {
                         float sizeMult = stats.area * pStats.area;
                         p.maxLifeTime = stats.duration * pStats.duration;
                         float speed = stats.speed * pStats.speed;
+                        p.baseSpeed = speed;
                         // -----------------------------------
 
+
+                        float minDist = 10000.f;
+                        sf::Vector2f target = player.getPosition() + sf::Vector2f(100, 0);
+                        float rad = 10.f * sizeMult;
+                        p.shape.setRadius(rad);
+                        p.shape.setFillColor(sf::Color::White);
+                        p.shape.setOrigin({ rad, rad });
+                        p.shape.setPosition(player.getPosition());
                         // --- KONFIGURACJA KSZTA£TU (WHIP) ---
                         if (w.def->id == WHIP) {
                             p.boxShape.setSize({ 150.f * sizeMult, 40.f * sizeMult });
-                            p.boxShape.setFillColor(w.def->color);
+
+                            // --- 2. ZMIE— TE DWIE LINIKI: ---
+                            p.boxShape.setTexture(nullptr);         // Usuwamy teksturÍ z hitboxa
+                            p.boxShape.setFillColor(sf::Color::Transparent); // Robimy go niewidzialnym
+                            // --------------------------------
+
                             p.boxShape.setOrigin({ 0.f, 20.f * sizeMult });
                             p.startPos = player.getPosition();
                             p.boxShape.setPosition(player.getPosition());
 
-                            // Logika: 0 = przÛd, 1 = ty≥, 2 = przÛd...
+                            // Logika: 0 = przÛd, 1 = ty≥, 2 = przÛd itd
                             if (i % 2 == 0) {
-                                p.boxShape.setScale({ (float)facingDir, 1.f });
+                                if (facingDir == -1) p.boxShape.setScale({ -1.5f, 1.5f });
                             }
                             else {
-                                p.boxShape.setScale({ -(float)facingDir, 1.f });
+                                if (facingDir == 1) p.boxShape.setScale({ -1.5f, 1.5f });
                             }
-                            p.pierceLeft = 999;
+
+                            p.pierceLeft = stats.pierce;
                         }
                         // --- LIGHTNING ---
                         else if (w.def->id == LIGHTNING) {
@@ -3397,94 +2589,109 @@ int main() {
                                     validTargets.push_back(k);
                                 }
                             }
-                            if (validTargets.empty()) { w.cooldownTimer = 0.05f; continue; }
+                            if (validTargets.empty()) {
+								w.cooldownTimer = 0.05f;
+                                continue; 
+                            }
 
                             int idx = validTargets[rand() % validTargets.size()];
-                            p.boxShape.setSize({ 20.f * sizeMult, 100.f });
-                            p.boxShape.setFillColor(sf::Color::Yellow);
-                            p.boxShape.setOrigin({ 10.f * sizeMult, 100.f });
-                            p.boxShape.setPosition(enemies[idx].shape.getPosition());
-                            p.maxLifeTime = stats.duration; // Z levela
-                            p.damage = stats.damage;        // Z levela
-                            p.pierceLeft = 999;
-                        }
-                        // --- INNE BRONIE ---
-                        else {
-                            float rad = 10.f * sizeMult;
-                            if (w.def->id == AXE) rad = 30.f * sizeMult;
 
-                            p.shape.setRadius(rad); 
-                            p.shape.setFillColor(w.def->color);
-                            p.shape.setOrigin({ rad, rad });
-
-                            // Domyúlna pozycja gracza
-                            p.shape.setPosition(player.getPosition());
+                            //  TWORZENIE ANIMOWANEGO PIORUNA
+                            lightnings.emplace_back(piorunTexture,enemies[idx].shape.getPosition());
                             p.pierceLeft = stats.pierce;
+                            p.boxShape.setSize({ 40.f, 100.f });
+                            p.boxShape.setOrigin({ 20.f, 100.f });
+                            p.boxShape.setPosition(enemies[idx].shape.getPosition());
 
-                            if (w.def->id == MAGIC_WAND) {
-                                float minDist = 10000.f; 
-                                sf::Vector2f target = player.getPosition() + sf::Vector2f(100, 0);
+                            // Ustawiamy czas øycia hitboxa
+                            p.maxLifeTime = 0.2f;
+                        }
+                        // --- INNE BRONIE --- 
+                        else if (w.def->id == MAGIC_WAND) {
+                            p.shape.setTexture(&piwoTexture);
+                            p.shape.setScale({ 1.7f, 1.7f });
+                            for (auto& e : enemies) {
+                                float d = vectorLength(e.shape.getPosition() - player.getPosition());
+                                if (d < minDist) { minDist = d; target = e.shape.getPosition(); }
+                            }
+                            sf::Vector2f dir = normalize(target - player.getPosition());
+                            p.velocity = dir * speed;
 
-                                for (auto& e : enemies) {
-                                    float d = vectorLength(e.shape.getPosition() - player.getPosition());
-                                    if (d < minDist) { minDist = d; target = e.shape.getPosition(); }
-                                }
-                                sf::Vector2f dir = normalize(target - player.getPosition());
-                                p.velocity = dir * speed;
+                            // LOGIKA W ØYKA: Przesuwamy start do ty≥u dla kolejnych pociskÛw
+                            // i=0 (0px), i=1 (-20px), i=2 (-40px) wzd≥uø wektora lotu
+                            p.shape.setPosition(player.getPosition() - (dir * ((float)i * 25.f)));
 
-                                // LOGIKA W ØYKA: Przesuwamy start do ty≥u dla kolejnych pociskÛw
-                                // i=0 (0px), i=1 (-20px), i=2 (-40px) wzd≥uø wektora lotu
-                                p.shape.setPosition(player.getPosition() - (dir * ((float)i * 25.f)));
+                            p.pierceLeft = stats.pierce;
+                        }
+                        else if (w.def->id == KNIFE) {
+                            sf::Vector2f dir((float)facingDir, 0.f);
+                            p.velocity = normalize(dir) * speed;
 
-                                p.pierceLeft = 0;
-                            }
-                            else if (w.def->id == KNIFE) {
-                                sf::Vector2f dir((float)facingDir, 0.f);
-                                p.velocity = normalize(dir) * speed;
+                            // LOGIKA W ØYKA (jeden za drugim)
+                            p.shape.setPosition(player.getPosition() - (dir * ((float)i * 30.f)));
 
-                                // LOGIKA W ØYKA (jeden za drugim)
-                                p.shape.setPosition(player.getPosition() - (dir * ((float)i * 30.f)));
+                            p.pierceLeft = stats.pierce;
+                            p.shape.setTexture(&olowekTexture);                      // przypisz tekstury
 
-                                p.pierceLeft = 1 + (w.level / 2);
-                            }
-                            else if (w.def->id == AXE) {
-                                // Axe rzucamy lekko rozrzucone na boki
-                                float xDir = (float)facingDir * 300.f + (i * 100.f * facingDir); // ZwiÍkszamy rozrzut
-                                p.velocity = sf::Vector2f(xDir, -700.f - (i * 50.f));
-                                p.pierceLeft = 999;
-                            }
-                            else if (w.def->id == BOOMERANG) {
-                                p.startPos = player.getPosition();
-                                sf::Vector2f target = player.getPosition() + sf::Vector2f(100, 0);
-                                if (!enemies.empty()) target = enemies[rand() % enemies.size()].shape.getPosition();
-                                p.velocity = normalize(target - player.getPosition()) * speed;
-                                // Lekki delay w pozycji dla bumerangu
-                                p.shape.setPosition(player.getPosition() - (p.velocity * ((float)i * 0.1f)));
-                                p.pierceLeft = 999;
-                            }
-                            else if (w.def->id == BIBLE) {
-                                p.pierceLeft = 999;
-                                // LOGIKA BIBLII: Rozk≥adamy rÛwno po kole
-                                // i=0 (0st), i=1 (180st) dla amount=2
-                                float angleStep = 360.f / (float)amount; // Np. 360/2 = 180
-                                p.angleOffset = (float)i * angleStep;
-                            }
-                            else if (w.def->id == FIRE_WAND) {
-                                float angle = (float)(rand() % 360) * 3.14f / 180.f;
-                                p.velocity = sf::Vector2f(std::cos(angle), std::sin(angle)) * speed;
-                                p.pierceLeft = 999;
-                            }
-                            else if (w.def->id == HOLY_WATER) {
-                                float angle = (float)(rand() % 360);
-                                p.velocity = sf::Vector2f(std::cos(angle), std::sin(angle)) * speed;
-                                p.maxLifeTime = 1.0f; p.pierceLeft = 0;
-                            }
+                            // Obracanie w zaleønoúci od kierunku
+                            if (facingDir == -1) p.shape.setScale({ -2.f, 2.f });
+                            else p.shape.setScale({ 2.f, 2.f });
+                        }
+                        else if (w.def->id == AXE) {
+                            float fixedThrowPowerY = 1100.f;
+                            float fixedThrowPowerX = 350.f;
+
+                            float xDir = (float)facingDir * fixedThrowPowerX + (i * 100.f * facingDir);
+
+                            // Ustawiamy wektor startowy "na sztywno"
+                            p.velocity = sf::Vector2f(xDir, -fixedThrowPowerY - (i * 50.f));
+                            p.baseSpeed = speed / 600.f;
+                            p.pierceLeft = stats.pierce;
+                            p.shape.setTexture(&krzesloTexture);
+                            p.shape.setScale({ 3.5f, 3.5f });
+
+                        }
+                        else if (w.def->id == BOOMERANG) {
+                            p.startPos = player.getPosition();
+                            sf::Vector2f target = player.getPosition() + sf::Vector2f(100, 0);
+                            if (!enemies.empty()) target = enemies[rand() % enemies.size()].shape.getPosition();
+                            p.velocity = normalize(target - player.getPosition()) * speed;
+                            // Lekki delay w pozycji dla bumerangu
+                            p.shape.setPosition(player.getPosition() - (p.velocity * ((float)i * 0.1f)));
+
+                            p.pierceLeft = stats.pierce;
+                            p.shape.setTexture(&bananTexture);
+                            p.shape.setScale({ 2.0f, 2.0f });
+                        }
+                        else if (w.def->id == BIBLE) {
+                            p.pierceLeft = stats.pierce;
+                            // LOGIKA BIBLII: Rozk≥adamy rÛwno po kole
+                            // i=0 (0st), i=1 (180st) dla amount=2
+                            float angleStep = 360.f / (float)amount; // Np. 360/2 = 180
+                            p.angleOffset = (float)i * angleStep;
+                            p.shape.setTexture(&ksiazkaTexture);
+                            p.shape.setScale({ 2.0f, 2.0f });
+                        }
+                        else if (w.def->id == FIRE_WAND) {
+                            float angle = (float)(rand() % 360) * 3.14f / 180.f;
+                            p.velocity = sf::Vector2f(std::cos(angle), std::sin(angle)) * speed;
+                            p.pierceLeft = stats.pierce;
+                            p.shape.setTexture(&stalTexture);
+                            p.shape.setScale({ 2.5f, 2.5f });
+                        }
+                        else if (w.def->id == HOLY_WATER) {
+                            float angle = (float)(rand() % 360);
+                            p.velocity = sf::Vector2f(std::cos(angle), std::sin(angle)) * speed;
+                            p.maxLifeTime = 1.0f; 
+                            p.pierceLeft = stats.pierce;
+                            p.shape.setTexture(&potkaTexture);
+                            p.shape.setScale({ 2.0f, 2.0f });
                         }
 
-                        projectiles.push_back(p);
-                    }
+                    projectiles.push_back(p);
                 }
             }
+        }
 
             // 4. AKTUALIZACJA POCISK”W
             for (size_t i = 0; i < projectiles.size();) {
@@ -3494,10 +2701,14 @@ int main() {
 
                 if (p.lifeTime > p.maxLifeTime) {
                     if (p.wId == HOLY_WATER) {
-                        DamageZone z; z.wId = HOLY_WATER; z.maxLifeTime = 3.0f * pStats.duration;
+                        DamageZone z; 
+                        z.wId = HOLY_WATER; 
+                        z.maxLifeTime = 3.0f * pStats.duration;
                         z.damage = p.damage;
                         float r = 60.f * pStats.area;
-                        z.shape.setRadius(r); z.shape.setFillColor(sf::Color(0, 0, 255, 100)); z.shape.setOrigin({ r, r });
+                        z.shape.setRadius(r); 
+                        z.shape.setFillColor(sf::Color(0, 0, 255, 100)); 
+                        z.shape.setOrigin({ r, r });
                         z.shape.setPosition(p.shape.getPosition());
                         zones.push_back(z);
                     }
@@ -3507,9 +2718,17 @@ int main() {
                 if (!dead) {
                     // Logika ruchu (bicz, axe, bible...)
                     if (p.wId == AXE) {
-                        p.velocity.y += 1000.f * dt;
-                        p.shape.move(p.velocity * dt);
-                        p.shape.rotate(sf::degrees(360.f * dt));
+                        // "AXE TIME": Mnoøymy czas przez baseSpeed.
+                        // Jeúli baseSpeed = 2.0, to w jednej klatce gry (dt)
+                        // topÛr wykona ruch, jakby minÍ≥y dwie klatki.
+                        float axeDt = dt * p.baseSpeed;
+
+                        // Uøywamy axeDt zamiast zwyk≥ego dt do grawitacji i ruchu
+                        p.velocity.y += 2500.f * axeDt; // Grawitacja (taka sama jak baseGravity)
+                        p.shape.move(p.velocity* axeDt);
+
+                        // Obracanie
+                        p.shape.rotate(sf::degrees(360.f * axeDt));
                     }
                     else if (p.wId == BOOMERANG) {
                         p.shape.move(p.velocity * dt);
@@ -3517,10 +2736,10 @@ int main() {
                         if (!p.returning && p.lifeTime > p.maxLifeTime * 0.4f) { p.velocity = -p.velocity; p.returning = true; }
                     }
                     else if (p.wId == BIBLE) {
-                        float speed = 3.0f * pStats.speed;
+                        float currentSpeed = p.baseSpeed;
                         float dist = 120.f * pStats.area;
                         // Obliczamy kπt w stopniach: Czas gry + PrzesuniÍcie dla tego konkretnego pocisku
-                        float baseAngle = gameTime * speed * 57.29f; // * 57.29 zamienia radiany na stopnie (opcjonalne, zaleønie jak liczysz speed)
+                        float baseAngle = gameTime * currentSpeed * 57.29f; // * 57.29 zamienia radiany na stopnie (opcjonalne, zaleønie jak liczysz speed)
                         // Proúciej:
                         float finalAngleDegrees = (gameTime * 200.f) + p.angleOffset;
 
@@ -3530,11 +2749,17 @@ int main() {
                         p.shape.setPosition(player.getPosition() + sf::Vector2f(std::cos(rad) * dist, std::sin(rad) * dist));
                     }
                     else if (p.wId == WHIP) { p.boxShape.setPosition(player.getPosition()); }
-                    else if (p.wId == LIGHTNING) {}
                     else { p.shape.move(p.velocity * dt); }
 
                     // Kolizje
-                    sf::FloatRect pBounds = (p.wId == WHIP || p.wId == LIGHTNING) ? p.boxShape.getGlobalBounds() : p.shape.getGlobalBounds();
+                    sf::FloatRect pBounds;
+
+                    if (p.wId == WHIP || p.wId == LIGHTNING) {
+                        pBounds = p.boxShape.getGlobalBounds();
+                    }
+                    else {
+                        pBounds = p.shape.getGlobalBounds();
+                    }
 
                     for (auto& en : enemies) {
                         bool hitAlready = false; for (int id : p.hitEnemies) if (id == en.id) hitAlready = true;
@@ -3542,45 +2767,56 @@ int main() {
 
                         // KOLIZJA POCISKU Z WROGIEM
                         if (pBounds.findIntersection(en.shape.getGlobalBounds())) {
+                            bool hitAlready = false;
+                            for (int id : p.hitEnemies) if (id == en.id) hitAlready = true;
+                            if (hitAlready) continue;
+
                             p.hitEnemies.push_back(en.id);
 
-                            // 1. ZADAJ OBRAØENIA
+                            // 1. ZADAJ OBRAØENIA (bezpoúrednie trafienie fiolkπ)
                             en.hp -= p.damage;
-
-                            // Efekt trafienia (opcjonalny - migniÍcie na bia≥o)
-                            // en.shape.setFillColor(sf::Color::White); 
 
                             // 2. SPRAWDè CZY WR”G ØYJE
                             if (en.hp <= 0.f) {
-                                // åMIER∆ WROGA
+                                // ... (kod úmierci wroga, exp orb - SKOPIUJ SW”J ISTNIEJ•CY KOD TUTAJ lub zostaw jak jest) ...
                                 sf::Vector2f deathPos = en.shape.getPosition();
-                                en.shape.setPosition(sf::Vector2f(-9000.f, -9000.f)); // WyrzuÊ poza mapÍ (do usuniÍcia)
+                                en.shape.setPosition(sf::Vector2f(-9000.f, -9000.f));
 
-                                // Drop XP
                                 ExpOrb orb(expOrbTexture);
-                                // Ustawiamy pierwszπ klatkÍ (16x16)
-                                orb.sprite.setTextureRect(sf::IntRect({ 0, 0 }, {16, 16}));
-                                // Ustawiamy úrodek (po≥owa z 16)
+                                orb.sprite.setTextureRect(sf::IntRect({ 0, 0 }, { 16, 16 }));
                                 orb.sprite.setOrigin(sf::Vector2f(8.f, 8.f));
                                 orb.sprite.setPosition(deathPos);
-
                                 float randX = (float)(rand() % 200 - 100);
                                 orb.velocity = { randX, -400.f };
                                 orb.value = 10;
-
                                 expOrbs.push_back(orb);
-
-                                // Waøne: Øeby usunπÊ wroga z wektora enemies, musimy to zrobiÊ ostroønie.
-                                // Tutaj oznaczamy go jako "martwego" przesuwajπc daleko, 
-                                // a pÍtla wrogÛw (niøej w kodzie) usunie go, bo x < -10000.
-                                // To najbezpieczniejsza metoda bez przepisywania ca≥ej pÍtli pociskÛw.
                             }
                             else {
-                                // PRZEØY£ - Odrzut (opcjonalne)
+                                // Odrzut (opcjonalny)
                                 en.shape.move(p.velocity * dt * 0.5f);
                             }
 
-                            if (p.pierceLeft > 0) p.pierceLeft--; else { dead = true; break; }
+                            // --- NAPRAWA FLASK (HOLY WATER) ---
+                            // Jeúli fiolka trafi wroga, musi pÍknπÊ i stworzyÊ strefÍ!
+                            if (p.wId == HOLY_WATER) {
+                                DamageZone z;
+                                z.wId = HOLY_WATER;
+                                z.maxLifeTime = 3.0f * pStats.duration;
+                                z.damage = p.damage; // Obraøenia strefy takie same jak pocisku
+                                float r = 60.f * pStats.area;
+                                z.shape.setRadius(r);
+                                z.shape.setFillColor(sf::Color(0, 0, 255, 100));
+                                z.shape.setOrigin({ r, r });
+                                z.shape.setPosition(p.shape.getPosition()); // Strefa w miejscu trafienia wroga
+                                zones.push_back(z);
+
+                                dead = true; // Natychmiastowe zniszczenie pocisku
+                                break;       // Przerywamy pÍtlÍ wrogÛw dla tego pocisku (bo juø nie istnieje)
+                            }
+                            // ----------------------------------
+
+                            if (p.pierceLeft > 0) p.pierceLeft--;
+                            else { dead = true; break; }
                         }
                     }
                 }
@@ -3683,7 +2919,6 @@ int main() {
                 enemies[i].velocity.y += baseGravity * dt;
                 enemies[i].shape.move(enemies[i].velocity * dt);
 
-                // ... (kod pod≥ogi wrogÛw bez zmian) ...
                 if (enemies[i].shape.getPosition().y + 25.f > ground.getPosition().y) {
                     enemies[i].shape.setPosition({ enemies[i].shape.getPosition().x, ground.getPosition().y - 25.f });
                     enemies[i].velocity.y = 0.f;
@@ -3692,7 +2927,7 @@ int main() {
                 // ZMIANA: Obs≥uga obraøeÒ i úmierci
                 if (enemies[i].shape.getGlobalBounds().findIntersection(hitbox.getGlobalBounds()) && !isDying) {
                     float dmg = 1.0f;
-                    if (pStats.armor > 0) dmg -= (float)pStats.armor;
+                    if (pStats.armor > 0) dmg = dmg - (int)pStats.armor;
                     if (dmg < 0.1f) dmg = 0.1f;
 
                     currentHp -= dmg;
@@ -3884,7 +3119,152 @@ int main() {
                 }
             }
         }
+		// 9. AKTUALIZACJA ANIMACJI PIORUN”W
+        for (size_t i = 0; i < lightnings.size(); ) {
+            lightnings[i].animTimer += dt;
 
+            if (lightnings[i].animTimer >= 0.04f) { // szybkoúÊ animacji
+                lightnings[i].animTimer = 0.f;
+                lightnings[i].currentFrame++;
+                if (lightnings[i].currentFrame < 13) {
+                    lightnings[i].sprite.setTextureRect(
+                        sf::IntRect({ lightnings[i].currentFrame * 64,0 }, { 64, 64 } ) );
+
+                }
+
+            }
+            // --- USUWANIE PO ANIMACJI ---
+            if (lightnings[i].currentFrame >= 13) {
+                lightnings.erase(lightnings.begin() + i);
+            }
+            else {
+                ++i;
+            }
+        }
+        // 10. --- AKTUALIZACJA ANIMACJI SZALIKA ---
+        for (auto it = szalik.begin(); it != szalik.end(); ) {
+            // A. Pozycja: Szalik "przyklejony" do gracza
+            if (facingDir == 1) it->sprite.setPosition(player.getPosition() + sf::Vector2f(65.f, 0.f));
+			else it->sprite.setPosition(player.getPosition() + sf::Vector2f(-65.f, 0.f));
+
+            // B. Kierunek: Jeúli gracz siÍ obrÛci w trakcie ataku, szalik teø
+            if (facingDir == -1) it->sprite.setScale({ -0.125f, 0.125f });
+            else it->sprite.setScale({ 0.125f, 0.125f });
+
+            // C. Przewijanie klatek
+            it->animTimer += dt;
+            if (it->animTimer >= 0.08f) { // SzybkoúÊ animacji
+                it->animTimer = 0.f;
+                it->currentFrame++;
+
+                if (it->currentFrame >= 5) {
+                    it->finished = true; // Koniec animacji
+                    it->currentFrame = 4;
+                }
+                else {
+                    it->sprite.setTextureRect(sf::IntRect({ it->currentFrame * 1024, 0 }, { 1024, 1024 }));
+                }
+            }
+
+            // D. Usuwanie zuøytych animacji
+            if (it->finished) {
+                it = szalik.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+        // --- Aktualizacja animacji wrogÛw ---
+
+        for (size_t i = 0; i < Ochrona.size(); ) {
+            auto& w = Ochrona[i];
+            // 1. Znajdü w≥aúciciela (hitbox) po ID
+            bool foundOwner = false;
+            sf::Vector2f targetPos;
+
+            for (const auto& en : enemies) {
+                if (en.id == w.targetId) {
+                    targetPos = en.shape.getPosition();
+                    foundOwner = true;
+                    break;
+                }
+            }
+            // Jeúli hitbox nie istnieje (wrÛg zginπ≥), usuÒ animacjÍ
+            if (!foundOwner) {
+                Ochrona.erase(Ochrona.begin() + i);
+                continue;
+            }
+
+            // 2. Aktualizacja pozycji
+            w.sprite.setPosition(targetPos);
+            // 3. OBRACANIE W STRON  GRACZA (FLIP)
+            // Jeúli gracz jest po lewej stronie wroga
+            if (player.getPosition().x < targetPos.x) {
+                w.sprite.setScale({ -2.f, 2.f }); // OdwrÛÊ w poziomie (minus na X)
+            }
+            else {
+                w.sprite.setScale({ 2.f, 2.f });  // Normalna skala (patrzy w prawo)
+            }
+            // 4. ANIMACJA (ZWOLNIONA)
+            w.animTimer += dt;
+            // ZMIANA: ZwiÍkszono z 0.04f na 0.12f (im wiÍcej, tym wolniej)
+            if (w.animTimer >= 0.12f) {
+                w.animTimer = 0.f;
+                w.currentFrame++;
+                if (w.currentFrame >= 10) {
+                    w.currentFrame = 0;
+                }
+
+                w.sprite.setTextureRect(
+                    sf::IntRect({ w.currentFrame * 128, 0 }, { 128, 128 }));
+            }
+            i++;
+        }
+
+        for (size_t i = 0; i < Szczur.size(); ) {
+            auto& w2 = Szczur[i];
+            // 1. Znajdü w≥aúciciela (hitbox) po ID
+            bool foundOwner = false;
+            sf::Vector2f targetPos;
+            for (const auto& en : enemies) {
+                if (en.id == w2.targetId) {
+                    targetPos = en.shape.getPosition();
+                    foundOwner = true;
+                    break;
+                }
+            }
+            // Jeúli hitbox nie istnieje (wrÛg zginπ≥), usuÒ animacjÍ
+            if (!foundOwner) {
+                Szczur.erase(Szczur.begin() + i);
+                continue;
+            }
+
+            // 2. Aktualizacja pozycji
+            w2.sprite.setPosition(targetPos);
+            // 3. OBRACANIE W STRON  GRACZA (FLIP)
+            // Jeúli gracz jest po lewej stronie wroga
+            if (player.getPosition().x < targetPos.x) {
+                w2.sprite.setScale({ -2.f, 2.f }); // OdwrÛÊ w poziomie (minus na X)
+            }
+            else {
+                w2.sprite.setScale({ 2.0f, 2.0f });  // Normalna skala (patrzy w prawo)
+            }
+            // 4. ANIMACJA (ZWOLNIONA)
+            w2.animTimer += dt;
+            // ZMIANA: ZwiÍkszono z 0.04f na 0.12f (im wiÍcej, tym wolniej)
+            if (w2.animTimer >= 0.12f) {
+                w2.animTimer = 0.f;
+                w2.currentFrame++;
+
+                if (w2.currentFrame >= 5) {
+                    w2.currentFrame = 0;
+                }
+
+                w2.sprite.setTextureRect(
+                    sf::IntRect({ w2.currentFrame * 48, 0 },{ 48, 48 }));
+            }
+            i++;
+        }
         // --- RYSOWANIE ---
         window.clear(sf::Color(20, 20, 20));
 
@@ -3897,15 +3277,46 @@ int main() {
             window.draw(background);
             window.draw(ground);
 
+			//Czy blizez tej lini tym dalej jest rysowane
             for (auto& p : portals) window.draw(p.sprite);
             for (auto& z : zones) window.draw(z.shape);
-
-            for (auto& z : zones) window.draw(z.shape);
+            for (auto& l : lightnings) window.draw(l.sprite); 
+            for (auto& z : zones) {
+                window.draw(z.shape);
+            }
             for (auto& o : expOrbs) window.draw(o.sprite);
             for (auto& e : enemies) window.draw(e.shape);
             for (auto& p : projectiles) {
-                if (p.wId == WHIP || p.wId == LIGHTNING) window.draw(p.boxShape);
+                if (p.wId == WHIP) window.draw(p.boxShape);
                 else window.draw(p.shape);
+
+
+
+                //----------------- HITBOXY DO USUNIECIA----------------
+                if (p.wId == WHIP || p.wId == LIGHTNING) {
+                    sf::RectangleShape debugBox = p.boxShape; // Kopia kszta≥tu
+                    debugBox.setTexture(nullptr);             // Wy≥πcz teksturÍ
+                    debugBox.setFillColor(sf::Color(255, 0, 0, 50)); // Czerwony, pÛ≥przezroczysty
+                    window.draw(debugBox);
+                }
+                else {
+                    sf::CircleShape debugCircle = p.shape;    // Kopia kszta≥tu
+                    debugCircle.setTexture(nullptr);          // Wy≥πcz teksturÍ
+                    debugCircle.setFillColor(sf::Color(255, 0, 0, 50)); // Czerwony, pÛ≥przezroczysty
+                    window.draw(debugCircle);
+                }
+                //----------------- 
+
+
+
+
+            }
+            for (auto& w : Ochrona)
+                window.draw(w.sprite);
+            for (auto& w2 : Szczur)
+                window.draw(w2.sprite);
+            for (auto& s : szalik) {
+                window.draw(s.sprite);
             }
             window.draw(player);
 
