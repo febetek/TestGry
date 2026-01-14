@@ -378,13 +378,13 @@ void initWeaponDB() {
     flask.name = "Fiolka z laboratorium";
     flask.color = sf::Color(0, 100, 255);
 
-    flask.levels.push_back({ 15.f, 1.0f, 2.0f, 100.f, 1.0f, 1, 0, "Tworzy plame" });
-    flask.levels.push_back({ 15.f, 1.0f, 2.0f, 100.f, 1.0f, 2, 0, "Ilosc +1" });
-    flask.levels.push_back({ 25.f, 1.0f, 2.5f, 100.f, 1.0f, 2, 0, "Efekt trwa 0,5s dluzej i obrazenia +10" });
-    flask.levels.push_back({ 25.f, 1.0f, 2.5f, 100.f, 1.2f, 3, 0, "Ilosc +1 i obszar zwiekszony o 20%" });
-    flask.levels.push_back({ 25.f, 1.0f, 2.8f, 100.f, 1.2f, 3, 0, "Efekt trwa 0,3s dluzej" });
-    flask.levels.push_back({ 35.f, 1.0f, 2.8f, 100.f, 1.2f, 3, 0, "Obrazenia +10" });
-    flask.levels.push_back({ 50.f, 1.0f, 3.3f, 100.f, 1.2f, 4, 0, "Efekt trwa 0,5s dluzej, ilosc +1 i obr +15" });
+    flask.levels.push_back({ 15.f, 1.0f, 2.0f, 175.f, 1.0f, 1, 0, "Tworzy plame" });
+    flask.levels.push_back({ 15.f, 1.0f, 2.0f, 175.f, 1.0f, 2, 0, "Ilosc +1" });
+    flask.levels.push_back({ 25.f, 1.0f, 2.5f, 175.f, 1.0f, 2, 0, "Efekt trwa 0,5s dluzej i obrazenia +10" });
+    flask.levels.push_back({ 25.f, 1.0f, 2.5f, 175.f, 1.2f, 3, 0, "Ilosc +1 i obszar zwiekszony o 20%" });
+    flask.levels.push_back({ 25.f, 1.0f, 2.8f, 175.f, 1.2f, 3, 0, "Efekt trwa 0,3s dluzej" });
+    flask.levels.push_back({ 35.f, 1.0f, 2.8f, 175.f, 1.2f, 3, 0, "Obrazenia +10" });
+    flask.levels.push_back({ 50.f, 1.0f, 3.3f, 175.f, 1.2f, 4, 0, "Efekt trwa 0,5s dluzej, ilosc +1 i obr +15" });
     weaponDB.push_back(flask);
 
 
@@ -2261,7 +2261,7 @@ int main() {
 
                     maxFrames = 4; // Obrót ma 4 klatki
                     loopAnimation = false;
-                    frameDuration = 0.08f; // Obrót jest doœæ szybki
+                    frameDuration = 0.04f; // Obrót jest doœæ szybki
                 }
                 else if (isBraking) {
                     nextTexture = &runToIdleTexture; maxFrames = 7; loopAnimation = false;
@@ -2546,6 +2546,7 @@ int main() {
                         p.maxLifeTime = stats.duration * pStats.duration;
                         float speed = stats.speed * pStats.speed;
                         p.baseSpeed = speed;
+                        p.pierceLeft = stats.pierce;
                         // -----------------------------------
 
 
@@ -2576,8 +2577,6 @@ int main() {
                             else {
                                 if (facingDir == 1) p.boxShape.setScale({ -1.5f, 1.5f });
                             }
-
-                            p.pierceLeft = stats.pierce;
                         }
                         // --- LIGHTNING ---
                         else if (w.def->id == LIGHTNING) {
@@ -2598,7 +2597,6 @@ int main() {
 
                             //  TWORZENIE ANIMOWANEGO PIORUNA
                             lightnings.emplace_back(piorunTexture,enemies[idx].shape.getPosition());
-                            p.pierceLeft = stats.pierce;
                             p.boxShape.setSize({ 40.f, 100.f });
                             p.boxShape.setOrigin({ 20.f, 100.f });
                             p.boxShape.setPosition(enemies[idx].shape.getPosition());
@@ -2620,8 +2618,6 @@ int main() {
                             // LOGIKA WÊ¯YKA: Przesuwamy start do ty³u dla kolejnych pocisków
                             // i=0 (0px), i=1 (-20px), i=2 (-40px) wzd³u¿ wektora lotu
                             p.shape.setPosition(player.getPosition() - (dir * ((float)i * 25.f)));
-
-                            p.pierceLeft = stats.pierce;
                         }
                         else if (w.def->id == KNIFE) {
                             sf::Vector2f dir((float)facingDir, 0.f);
@@ -2629,8 +2625,6 @@ int main() {
 
                             // LOGIKA WÊ¯YKA (jeden za drugim)
                             p.shape.setPosition(player.getPosition() - (dir * ((float)i * 30.f)));
-
-                            p.pierceLeft = stats.pierce;
                             p.shape.setTexture(&olowekTexture);                      // przypisz tekstury
 
                             // Obracanie w zale¿noœci od kierunku
@@ -2646,25 +2640,33 @@ int main() {
                             // Ustawiamy wektor startowy "na sztywno"
                             p.velocity = sf::Vector2f(xDir, -fixedThrowPowerY - (i * 50.f));
                             p.baseSpeed = speed / 600.f;
-                            p.pierceLeft = stats.pierce;
                             p.shape.setTexture(&krzesloTexture);
                             p.shape.setScale({ 3.5f, 3.5f });
 
                         }
                         else if (w.def->id == BOOMERANG) {
                             p.startPos = player.getPosition();
-                            sf::Vector2f target = player.getPosition() + sf::Vector2f(100, 0);
-                            if (!enemies.empty()) target = enemies[rand() % enemies.size()].shape.getPosition();
-                            p.velocity = normalize(target - player.getPosition()) * speed;
-                            // Lekki delay w pozycji dla bumerangu
-                            p.shape.setPosition(player.getPosition() - (p.velocity * ((float)i * 0.1f)));
 
-                            p.pierceLeft = stats.pierce;
+                            // 1. Szukamy najbli¿szego celu
+                            float minDist = 10000.f;
+                            sf::Vector2f target = player.getPosition() + sf::Vector2f(100 * facingDir, 0); // Domyœlnie prosto
+
+                            for (auto& e : enemies) {
+                                float d = vectorLength(e.shape.getPosition() - player.getPosition());
+                                if (d < minDist) {
+                                    minDist = d;
+                                    target = e.shape.getPosition();
+                                }
+                            }
+
+                            // 2. Lecimy do niego
+                            p.velocity = normalize(target - player.getPosition()) * speed;
+
+                            p.shape.setPosition(player.getPosition());
                             p.shape.setTexture(&bananTexture);
                             p.shape.setScale({ 2.0f, 2.0f });
                         }
                         else if (w.def->id == BIBLE) {
-                            p.pierceLeft = stats.pierce;
                             // LOGIKA BIBLII: Rozk³adamy równo po kole
                             // i=0 (0st), i=1 (180st) dla amount=2
                             float angleStep = 360.f / (float)amount; // Np. 360/2 = 180
@@ -2675,7 +2677,6 @@ int main() {
                         else if (w.def->id == FIRE_WAND) {
                             float angle = (float)(rand() % 360) * 3.14f / 180.f;
                             p.velocity = sf::Vector2f(std::cos(angle), std::sin(angle)) * speed;
-                            p.pierceLeft = stats.pierce;
                             p.shape.setTexture(&stalTexture);
                             p.shape.setScale({ 2.5f, 2.5f });
                         }
@@ -2683,7 +2684,6 @@ int main() {
                             float angle = (float)(rand() % 360);
                             p.velocity = sf::Vector2f(std::cos(angle), std::sin(angle)) * speed;
                             p.maxLifeTime = 1.0f; 
-                            p.pierceLeft = stats.pierce;
                             p.shape.setTexture(&potkaTexture);
                             p.shape.setScale({ 2.0f, 2.0f });
                         }
