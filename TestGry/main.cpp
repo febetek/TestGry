@@ -651,6 +651,11 @@ int main() {
 
 	bool isFullscreen = false;
 
+	sf::Image icon;
+	if (icon.loadFromFile("sprites/icon.png")) {
+		window.setIcon(icon.getSize(), icon.getPixelsPtr());
+	}
+
 	sf::Texture menuBgTexture;
 	// Pamiêtaj o poprawnej œcie¿ce i nazwie pliku!
 	if (!menuBgTexture.loadFromFile("sprites/mainmenu.png")) {
@@ -676,6 +681,17 @@ int main() {
 	if (!font.openFromFile("czcionka/arial.ttf")) {
 		std::cout << "Brak pliku arial.ttf!" << std::endl;
 		return -1;
+	}
+
+	sf::Image cursorImage;
+	std::optional<sf::Cursor> customCursor;
+
+	if (cursorImage.loadFromFile("sprites/kursor.png")) {
+		customCursor = sf::Cursor::createFromPixels(cursorImage.getPixelsPtr(),cursorImage.getSize(),{ 0, 0 });
+
+		if (customCursor) { // Sprawdzamy czy uda³o siê stworzyæ kursor
+			window.setMouseCursor(customCursor.value());
+		}
 	}
 
 	// PORTAl
@@ -798,15 +814,16 @@ int main() {
 		return -1;
 	}
 
+	float sfxScale = 50.0f;
+
 	sf::SoundBuffer expBuffer;
 	if (!expBuffer.loadFromFile("dzwieki/exp.wav")) {
 		std::cout << "Brak pliku exp.wav!" << std::endl;
 		return -1;
 	}
 	sf::Sound expSound(expBuffer);
-	expSound.setVolume(15.f);
+	expSound.setVolume(sfxScale * 0.3f);
 
-	float sfxScale = 50.0f;
 	sf::Sound jumpSound(jumpBuffer);
 	jumpSound.setVolume(sfxScale);                                                      // ustawienia g³oœnoœci skoku
 
@@ -823,7 +840,7 @@ int main() {
 		std::cout << "Brak pliku game_over.ogg!" << std::endl;
 		return -1;
 	}
-	sf::Sound gameOverSound(gameOverBuffer); // Konstruktor SFML 3.0                                                        // ustawienia dŸwiêku gameover
+	sf::Sound gameOverSound(gameOverBuffer);                                                     // ustawienia dŸwiêku gameover
 	gameOverSound.setVolume(sfxScale * 1.5f);
 
 	sf::SoundBuffer levelUpBuffer;
@@ -832,9 +849,111 @@ int main() {
 		return -1;
 	}
 	sf::Sound levelUpSound(levelUpBuffer);
-	levelUpSound.setVolume(60.f);
-	// -----------------------------------
+	levelUpSound.setVolume(sfxScale * 1.2f);
 
+	sf::SoundBuffer bossDeathBuffer;
+	if (!bossDeathBuffer.loadFromFile("dzwieki/boss_dead.wav")) {
+		std::cout << "Brak pliku boss_death.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound bossDeathSound(bossDeathBuffer);
+	bossDeathSound.setVolume(sfxScale * 2.f);
+
+	sf::SoundBuffer bossHitBuffer;
+	if (!bossHitBuffer.loadFromFile("dzwieki/boss_hit.wav")) {
+		std::cout << "Brak pliku boss_hit.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound bossHitSound(bossHitBuffer);
+	bossHitSound.setVolume(sfxScale * 2.f);
+
+	sf::SoundBuffer hurtBuffer;
+	if (!hurtBuffer.loadFromFile("dzwieki/hurt.wav")) {
+		std::cout << "Brak pliku hurt.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound hurtSound(hurtBuffer);
+	hurtSound.setVolume(sfxScale * 1.2f);
+
+	sf::SoundBuffer lightningBuffer;
+	if (!lightningBuffer.loadFromFile("dzwieki/piorun.wav")) {
+		std::cout << "Brak pliku piorun.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound lightningSound(lightningBuffer);
+	lightningSound.setVolume(sfxScale * 0.8f);
+
+	sf::SoundBuffer whipBuffer;
+	if (!whipBuffer.loadFromFile("dzwieki/szalik.wav")) {
+		std::cout << "Brak pliku szalik.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound whipSound(whipBuffer);
+	whipSound.setVolume(sfxScale * 0.8f);
+
+	sf::SoundBuffer beerBuffer;
+	if (!beerBuffer.loadFromFile("dzwieki/piwo.wav")) {
+		std::cout << "Brak pliku piwo.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound beerSound(beerBuffer);
+	beerSound.setVolume(sfxScale * 0.6f);
+
+	sf::SoundBuffer pencilBuffer;
+	if (!pencilBuffer.loadFromFile("dzwieki/olowek.wav")) {
+		std::cout << "Brak pliku olowek.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound pencilSound(pencilBuffer);
+	pencilSound.setVolume(sfxScale * 0.7f);
+
+	sf::SoundBuffer chairBuffer;
+	if (!chairBuffer.loadFromFile("dzwieki/krzeslo.wav")) {
+		std::cout << "Brak pliku krzeslo.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound chairSound(chairBuffer);
+	chairSound.setVolume(sfxScale);
+
+	sf::SoundBuffer bananaBuffer;
+	if (!bananaBuffer.loadFromFile("dzwieki/banan.wav")) {
+		std::cout << "Brak pliku banan.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound bananaSound(bananaBuffer);
+	bananaSound.setVolume(sfxScale * 0.8f);
+
+	sf::SoundBuffer stalBuffer;
+	if (!stalBuffer.loadFromFile("dzwieki/stal.wav")) {
+		std::cout << "Brak pliku stal.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound stalSound(stalBuffer);
+	stalSound.setVolume(sfxScale * 0.8f);
+
+	sf::SoundBuffer flaskBuffer;
+	if (!flaskBuffer.loadFromFile("dzwieki/flask.wav")) {
+		std::cout << "Brak pliku flask.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound flaskSound(flaskBuffer);
+	flaskSound.setVolume(sfxScale * 0.8f);
+
+	sf::SoundBuffer bibleHitBuffer;
+	if (!bibleHitBuffer.loadFromFile("dzwieki/bible_hit.wav")) {
+		std::cout << "Brak pliku bible_hit.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound bibleHitSound(bibleHitBuffer);
+	bibleHitSound.setVolume(sfxScale * 0.8f);
+
+	sf::SoundBuffer garlicHitBuffer;
+	if (!garlicHitBuffer.loadFromFile("dzwieki/garlic_hit.wav")) {
+		std::cout << "Brak pliku garlic_hit.wav!" << std::endl;
+		return -1;
+	}
+	sf::Sound garlicHitSound(garlicHitBuffer);
+	garlicHitSound.setVolume(sfxScale * 0.5f);
 
 	// --- UI SETUP ---
 	sf::RectangleShape uiBar({ (float)windowWidth, 100.f }); uiBar.setFillColor(sf::Color(0, 0, 0, 150));
@@ -1697,6 +1816,22 @@ int main() {
 															jumpSound.setVolume(percent * volumeSfxScale);
 															clickSound.setVolume(percent * volumeSfxScale);
 															gameOverSound.setVolume(percent * volumeSfxScale * 1.5f);
+															expSound.setVolume(percent* volumeSfxScale * 0.3f);
+															levelUpSound.setVolume(percent* volumeSfxScale * 1.2f);
+															bossDeathSound.setVolume(percent* volumeSfxScale * 2.0f);
+															bossHitSound.setVolume(percent* volumeSfxScale * 2.0f);
+															hurtSound.setVolume(percent* volumeSfxScale * 1.2f);
+															lightningSound.setVolume(percent* volumeSfxScale * 0.8f);
+															whipSound.setVolume(percent* volumeSfxScale * 0.8f);
+															beerSound.setVolume(percent* volumeSfxScale * 0.6f);
+															pencilSound.setVolume(percent* volumeSfxScale * 0.7f);
+															chairSound.setVolume(percent* volumeSfxScale);
+															bananaSound.setVolume(percent* volumeSfxScale * 0.8f);
+															stalSound.setVolume(percent* volumeSfxScale * 0.8f);
+															flaskSound.setVolume(percent* volumeSfxScale * 0.8f);
+															bibleHitSound.setVolume(percent* volumeSfxScale * 0.8f);
+															garlicHitSound.setVolume(percent* volumeSfxScale * 0.5f);
+
 														}
 													}
 
@@ -2281,6 +2416,7 @@ int main() {
 					pauseRestart.setFillColor(sf::Color::Red);
 
 					if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+						clickSound.play();
 						// Logika Restartu:
 						isPaused = false;
 						gameStarted = false; // Przerywamy pêtlê gry, wracamy do pêtli "Matki"
@@ -2301,6 +2437,7 @@ int main() {
 					pauseMainMenu.setFillColor(sf::Color::Red);
 
 					if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+						clickSound.play();
 						// Logika Wyjœcia do Menu:
 						isPaused = false;
 						gameStarted = false; // Przerywamy pêtlê gry
@@ -2501,48 +2638,51 @@ int main() {
 				if (spawnDelay < 0.05f) spawnDelay = 0.05f;
 
 				if (spawnClock.getElapsedTime().asSeconds() > spawnDelay) {
-
-					// --- KOD BOSSA ---
-					if (!bossSpawned && gameTime >= 300.f) {// 5 minut
-						Enemy boss;
-						boss.id = nextEnemyId++;
-						boss.hp = 2000.0f;
-						boss.maxHp = 2000.0f;
-						boss.isBoss = true;
-
-						// Wygl¹d bossa (Du¿y i inny kolor)
-						boss.shape.setRadius(100.f);
-						boss.shape.setFillColor(sf::Color::Transparent);
-						boss.shape.setOrigin(sf::Vector2f(100.f, 100.f));
-
-						float bossSpawnX = 0.f;
-
-						// Losujemy portal: 0 = Lewy, 1 = Prawy
-						if (rand() % 2 == 0) {
-							bossSpawnX = 80.f; // Pozycja lewego portalu
-						}
-						else {
-							bossSpawnX = mapWidth - 80.f; // Pozycja prawego portalu
-						}
-
-						// Wysokoœæ (Y)
-						// Ustawiamy go na ziemi. Odejmujemy 80, ¿eby du¿y boss nie zapada³ siê w pod³ogê.
-						float bossSpawnY = ground.getPosition().y - 80.f;
-
-						boss.shape.setPosition(sf::Vector2f(bossSpawnX, bossSpawnY));
-
-						// --- DODAJEMY ANIMACJÊ ---
-						Boss.emplace_back(bossTexture, boss.shape.getPosition());
-						Boss.back().targetId = boss.id;
-						// -------------------------
-
-						enemies.push_back(boss);
-						bossSpawned = true; // Zablokuj ponowne spawnowanie
-
-						// Nie spawnuj zwyk³ego wroga w tej samej klatce co bossa
-						spawnClock.restart();
-						continue; // PrzejdŸ do nastêpnej klatki pêtli
+					if (enemies.size() >= 300) {
+						spawnClock.restart(); // Resetujemy zegar, ¿eby spróbowa³ póŸniej
 					}
+					else {
+						// --- KOD BOSSA ---
+						if (!bossSpawned && gameTime >= 300.f) {// 5 minut
+							Enemy boss;
+							boss.id = nextEnemyId++;
+							boss.hp = 2000.0f;
+							boss.maxHp = 2000.0f;
+							boss.isBoss = true;
+
+							// Wygl¹d bossa (Du¿y i inny kolor)
+							boss.shape.setRadius(100.f);
+							boss.shape.setFillColor(sf::Color::Transparent);
+							boss.shape.setOrigin(sf::Vector2f(100.f, 100.f));
+
+							float bossSpawnX = 0.f;
+
+							// Losujemy portal: 0 = Lewy, 1 = Prawy
+							if (rand() % 2 == 0) {
+								bossSpawnX = 80.f; // Pozycja lewego portalu
+							}
+							else {
+								bossSpawnX = mapWidth - 80.f; // Pozycja prawego portalu
+							}
+
+							// Wysokoœæ (Y)
+							// Ustawiamy go na ziemi. Odejmujemy 80, ¿eby du¿y boss nie zapada³ siê w pod³ogê.
+							float bossSpawnY = ground.getPosition().y - 80.f;
+
+							boss.shape.setPosition(sf::Vector2f(bossSpawnX, bossSpawnY));
+
+							// --- DODAJEMY ANIMACJÊ ---
+							Boss.emplace_back(bossTexture, boss.shape.getPosition());
+							Boss.back().targetId = boss.id;
+							// -------------------------
+
+							enemies.push_back(boss);
+							bossSpawned = true; // Zablokuj ponowne spawnowanie
+
+							// Nie spawnuj zwyk³ego wroga w tej samej klatce co bossa
+							spawnClock.restart();
+							continue; // PrzejdŸ do nastêpnej klatki pêtli
+						}
 					// ------------------------
 
 					Enemy e;
@@ -2610,7 +2750,7 @@ int main() {
 					enemies.push_back(e);
 					spawnClock.restart();
 				}
-
+			}
 				// 3. BRONIE (STRZELANIE)
 				for (auto& w : weaponInventory) {
 					w.cooldownTimer -= dt;
@@ -2649,7 +2789,6 @@ int main() {
 						// Np. Whip lvl 3 ma w bazie amount=2.
 						int amount = stats.amount + pStats.amount;
 						if (w.def->id == WHIP) {
-							// Dodajemy 'sizeMult' na koñcu argumentów
 							szalik.emplace_back(szalikTexture, player.getPosition(), facingDir, 1, sizeMult);
 
 							if (amount > 1) {
@@ -2678,8 +2817,13 @@ int main() {
 							p.shape.setFillColor(sf::Color::White);
 							p.shape.setOrigin({ rad, rad });
 							p.shape.setPosition(player.getPosition());
+
+							float pitchVar = 0.9f + (float)(rand() % 20) / 100.f;
 							// --- KONFIGURACJA KSZTA£TU (WHIP) ---
 							if (w.def->id == WHIP) {
+								whipSound.setPitch(pitchVar);
+								whipSound.play();
+
 								p.boxShape.setSize({ 100.f * sizeMult, 30.f * sizeMult });
 
 								// --- 2. ZMIEÑ TE DWIE LINIKI: ---
@@ -2719,6 +2863,10 @@ int main() {
 
 								int idx = validTargets[rand() % validTargets.size()];
 
+								// ODTWARZANIE DWIÊKU PIORUNA
+								lightningSound.setPitch(pitchVar);
+								lightningSound.play();
+
 								//  TWORZENIE ANIMOWANEGO PIORUNA
 								lightnings.emplace_back(piorunTexture, enemies[idx].shape.getPosition());
 								p.boxShape.setSize({ 40.f, 100.f });
@@ -2730,6 +2878,9 @@ int main() {
 							}
 							// --- INNE BRONIE --- 
 							else if (w.def->id == MAGIC_WAND) {
+								beerSound.setPitch(pitchVar);
+								beerSound.play();
+
 								p.shape.setTexture(&piwoTexture);
 								p.shape.setScale({ 1.7f, 1.7f });
 								for (auto& e : enemies) {
@@ -2745,6 +2896,9 @@ int main() {
 								p.shape.rotate(sf::degrees(360.f * dt));
 							}
 							else if (w.def->id == KNIFE) {
+								pencilSound.setPitch(pitchVar);
+								pencilSound.play();
+
 								sf::Vector2f dir((float)facingDir, 0.f);
 								p.velocity = normalize(dir) * speed;
 
@@ -2757,6 +2911,9 @@ int main() {
 								else p.shape.setScale({ 2.f, 2.f });
 							}
 							else if (w.def->id == AXE) {
+								chairSound.setPitch(pitchVar);
+								chairSound.play();
+
 								float fixedThrowPowerY = 1100.f;
 								float fixedThrowPowerX = 350.f;
 
@@ -2770,6 +2927,9 @@ int main() {
 
 							}
 							else if (w.def->id == BOOMERANG) {
+								bananaSound.setPitch(pitchVar);
+								bananaSound.play();
+
 								p.startPos = player.getPosition();
 
 								// 1. Szukamy najbli¿szego celu
@@ -2804,6 +2964,8 @@ int main() {
 								p.velocity = sf::Vector2f(std::cos(angle), std::sin(angle)) * speed;
 								p.shape.setTexture(&stalTexture);
 								p.shape.setScale({ 2.5f, 2.5f });
+								stalSound.setPitch(pitchVar);
+								stalSound.play();
 							}
 							else if (w.def->id == HOLY_WATER) {
 								float angle = (float)(rand() % 360);
@@ -2811,6 +2973,8 @@ int main() {
 								p.maxLifeTime = 1.0f;
 								p.shape.setTexture(&potkaTexture);
 								p.shape.setScale({ 2.0f, 2.0f });
+								flaskSound.setPitch(pitchVar);
+								flaskSound.play();
 							}
 
 							projectiles.push_back(p);
@@ -2841,6 +3005,7 @@ int main() {
 					}
 
 					if (!dead) {
+						float pitchVar = 0.9f + (float)(rand() % 20) / 100.f;
 						// Logika ruchu (bicz, axe, bible...)
 						if (p.wId == AXE) {
 							// "AXE TIME": Mno¿ymy czas przez baseSpeed.
@@ -2903,6 +3068,12 @@ int main() {
 
 								p.hitEnemies.push_back(en.id);
 
+								if (p.wId == BIBLE) {
+									float pi = 0.9f + (float)(rand() % 20) / 100.f;
+									bibleHitSound.setPitch(pi);
+									bibleHitSound.play();
+								}
+
 								// 1. ZADAJ OBRA¯ENIA (bezpoœrednie trafienie fiolk¹)
 								en.hp -= p.damage;
 
@@ -2923,8 +3094,9 @@ int main() {
 
 									// --- TUTAJ USTALAMY WARTOŒÆ XP ---
 									if (en.isBoss) {
-										orb.value = 3000;
+										orb.value = 10000;
 										orb.sprite.setColor(sf::Color::Red);
+										bossDeathSound.play();
 									}
 									else {
 										orb.value = 10; // Zwyk³y szczur
@@ -2974,8 +3146,17 @@ int main() {
 
 					if (z.tickTimer > 0.2f) {
 						z.tickTimer = 0.f;
+						bool hitSoundPlayed = false;
 						for (auto& en : enemies) {
 							if (z.shape.getGlobalBounds().findIntersection(en.shape.getGlobalBounds())) {
+
+								if (z.wId == GARLIC && !hitSoundPlayed) {
+									float pi = 0.9f + (float)(rand() % 20) / 100.f;
+									garlicHitSound.setPitch(pi);
+									garlicHitSound.play();
+
+									hitSoundPlayed = true; // Zablokuj dŸwiêk dla reszty wrogów w tej klatce
+								}
 
 								// 1. ZADAJ OBRA¯ENIA
 								en.hp -= z.damage;
@@ -2997,6 +3178,7 @@ int main() {
 									if (en.isBoss) {
 										orb.value = 10000;
 										orb.sprite.setColor(sf::Color::Red);
+										bossDeathSound.play();
 									}
 									else {
 										orb.value = 10;
@@ -3053,15 +3235,20 @@ int main() {
 						// --- SYSTEM OBRA¯EÑ WED£UG TYPU WROGA ---
 						if (enemies[i].isBoss) {
 							dmg = 100.0f; // Boss
+							bossHitSound.play();
 						}
 						else if (enemies[i].maxHp == 100.0f) {
 							dmg = 5.0f;   // Enemy 3 (Egzamin)
+							hurtSound.play();
 						}
 						else if (enemies[i].maxHp == 15.0f) {
 							dmg = 3.0f;   // Enemy 2 (Ochrona)
+							hurtSound.play();
 						}
-						// W przeciwnym razie zostaje 1.0f (Szczur)
-						// ----------------------------------------
+						else {
+							dmg = 1.0f;   // Enemy 1 (Szczur)
+							hurtSound.play();
+						}
 
 						// Odejmujemy pancerz gracza
 						if (pStats.armor > 0) dmg = dmg - (int)pStats.armor;
