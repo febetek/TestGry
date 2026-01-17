@@ -131,11 +131,14 @@ struct ExpOrb {
 	float animTimer = 0.0f;
 	int currentFrame = 0;
 
+	bool isMagnet = false;
+
 	ExpOrb(const sf::Texture& tex) : sprite(tex) {
 		value = 0;
 		isOnGround = false;
 		animTimer = 0.0f;
 		currentFrame = 0;
+		isMagnet = false;
 		sprite.setScale(sf::Vector2f(1.5f, 1.5f));
 	}
 };
@@ -322,13 +325,13 @@ void initWeaponDB() {
 	wand.name = "Piwo AGH-owskie";
 	wand.color = sf::Color(0, 255, 255);
 
-	wand.levels.push_back({ 5.f, 1.0f, 3.0f, 600.f, 1.0f, 1, 0, "Strzela w najblizszego wroga" });
-	wand.levels.push_back({ 5.f, 1.0f, 3.0f, 600.f, 1.0f, 2, 1, "Ilosc +1 i przebicie +1" });
-	wand.levels.push_back({ 5.f, 0.8f, 3.0f, 600.f, 1.0f, 2, 1, "Szybkostrzelnosc zwiekszona \no 20%" });
-	wand.levels.push_back({ 5.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 1, "Ilosc +1" });
-	wand.levels.push_back({ 10.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 1, "Obrazenia +5" });
-	wand.levels.push_back({ 15.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 1, "Obrazenia +5" });
-	wand.levels.push_back({ 15.f, 0.8f, 3.0f, 600.f, 1.0f, 3, 2, "Przechodzi przez \njednego wroga wiecej" });
+	wand.levels.push_back({ 5.f, 1.0f, 1.5f, 600.f, 1.0f, 1, 0, "Strzela w najblizszego wroga" });
+	wand.levels.push_back({ 5.f, 1.0f, 1.5f, 600.f, 1.0f, 2, 0, "Ilosc +1" });
+	wand.levels.push_back({ 5.f, 0.8f, 1.5f, 600.f, 1.0f, 2, 0, "Szybkostrzelnosc zwiekszona \no 20%" });
+	wand.levels.push_back({ 5.f, 0.8f, 1.5f, 600.f, 1.0f, 3, 0, "Ilosc +1" });
+	wand.levels.push_back({ 10.f, 0.8f, 1.5f, 600.f, 1.0f, 3, 0, "Obrazenia +5" });
+	wand.levels.push_back({ 15.f, 0.8f, 1.5f, 600.f, 1.0f, 3, 0, "Obrazenia +5" });
+	wand.levels.push_back({ 15.f, 0.8f, 1.5f, 600.f, 1.0f, 3, 1, "Przechodzi przez \njednego wroga wiecej" });
 	weaponDB.push_back(wand);
 
 
@@ -416,7 +419,7 @@ void initWeaponDB() {
 	stink.levels.push_back({ 9.f, 0.8f, 3.0f, 600.f, 1.25f, 1, 1, "Szybkostrzelnosc zwiekszona \no 20%" });
 	stink.levels.push_back({ 11.f, 0.8f, 3.0f, 600.f, 1.50f, 1, 1, "Obszar zwiekszony o 25% \ni obrazenia +2" });
 	stink.levels.push_back({ 11.f, 0.6f, 3.0f, 600.f, 1.50f, 1, 1,"Szybkostrzelnosc zwiekszona o 20%" });
-	stink.levels.push_back({ 13.f, 0.6f, 3.0f, 600.f, 1.75f, 1, 1, "Obszar zwiekszony o 25% \ni obrazenia +2" });
+	stink.levels.push_back({ 13.f, 0.6f, 3.0f, 600.f, 2.0f, 1, 1, "Obszar zwiekszony o 50% \ni obrazenia +2" });
 	weaponDB.push_back(stink);
 
 
@@ -425,13 +428,13 @@ void initWeaponDB() {
 	flask.name = "Fiolka z laboratorium";
 	flask.color = sf::Color(0, 100, 255);
 
-	flask.levels.push_back({ 15.f, 1.0f, 2.0f, 175.f, 1.0f, 1, 0, "Tworzy plame" });
-	flask.levels.push_back({ 15.f, 1.0f, 2.0f, 175.f, 1.0f, 2, 0, "Ilosc +1" });
-	flask.levels.push_back({ 25.f, 1.0f, 2.5f, 175.f, 1.0f, 2, 0, "Efekt trwa 0,5s dluzej \ni obrazenia +10" });                               //------------------------------
-	flask.levels.push_back({ 25.f, 1.0f, 2.5f, 175.f, 1.2f, 3, 0, "Ilosc +1 \ni obszar zwiekszony o 20%" });
-	flask.levels.push_back({ 25.f, 1.0f, 2.8f, 175.f, 1.2f, 3, 0, "Efekt trwa 0,3s dluzej" });
-	flask.levels.push_back({ 35.f, 1.0f, 2.8f, 175.f, 1.2f, 3, 0, "Obrazenia +10" });
-	flask.levels.push_back({ 50.f, 1.0f, 3.3f, 175.f, 1.2f, 4, 0, "Efekt trwa 0,5s dluzej,\n ilosc +1 i obr +15" });
+	flask.levels.push_back({ 15.f, 0.8f, 2.0f, 175.f, 1.0f, 1, 0, "Tworzy plame" });
+	flask.levels.push_back({ 15.f, 0.8f, 2.0f, 175.f, 1.0f, 2, 0, "Ilosc +1" });
+	flask.levels.push_back({ 25.f, 0.8f, 2.5f, 175.f, 1.0f, 2, 0, "Efekt trwa 0,5s dluzej \ni obrazenia +10" });                               //------------------------------
+	flask.levels.push_back({ 25.f, 0.8f, 2.5f, 175.f, 1.0f, 3, 0, "Ilosc +1" });
+	flask.levels.push_back({ 25.f, 0.8f, 2.8f, 175.f, 1.0f, 3, 0, "Efekt trwa 0,3s dluzej" });
+	flask.levels.push_back({ 35.f, 0.8f, 2.8f, 175.f, 1.0f, 3, 0, "Obrazenia +10" });
+	flask.levels.push_back({ 50.f, 0.8f, 3.3f, 175.f, 1.0f, 4, 0, "Efekt trwa 0,5s dluzej,\n ilosc +1 i obr +15" });
 	weaponDB.push_back(flask);
 
 
@@ -439,13 +442,13 @@ void initWeaponDB() {
 	lightning.id = LIGHTNING;
 	lightning.name = "Piorun";
 	lightning.color = sf::Color::Yellow;
-	lightning.levels.push_back({ 5.f, 1.0f, 0.2f, 0.f, 1.0f, 1, 100, "Razi losowych wrogow" });
-	lightning.levels.push_back({ 7.f, 1.0f, 0.2f, 0.f, 1.0f, 1, 100, "Obrazenia +2" });
-	lightning.levels.push_back({ 7.f, 1.0f, 0.2f, 0.f, 1.0f, 2, 100, "Ilosc +1" });
-	lightning.levels.push_back({ 7.f, 0.8f, 0.2f, 0.f, 1.0f, 2, 100, "Szybkostrzelnosc zwiekszona \no 20%" });
-	lightning.levels.push_back({ 8.f, 0.8f, 0.2f, 0.f, 1.0f, 2, 100, "Obrazenia +1" });
-	lightning.levels.push_back({ 10.f, 0.8f, 0.2f, 0.f, 1.0f, 2, 100, "Obrazenia +2" });
-	lightning.levels.push_back({ 10.f, 0.8f, 0.2f, 0.f, 1.0f, 3, 100, "Ilosc +1" });
+	lightning.levels.push_back({ 5.f, 1.2f, 0.2f, 0.f, 1.0f, 1, 100, "Razi losowych wrogow" });
+	lightning.levels.push_back({ 7.f, 1.2f, 0.2f, 0.f, 1.0f, 1, 100, "Obrazenia +2" });
+	lightning.levels.push_back({ 7.f, 1.2f, 0.2f, 0.f, 1.0f, 2, 100, "Ilosc +1" });
+	lightning.levels.push_back({ 7.f, 1.0f, 0.2f, 0.f, 1.0f, 2, 100, "Szybkostrzelnosc zwiekszona \no 20%" });
+	lightning.levels.push_back({ 8.f, 1.0f, 0.2f, 0.f, 1.0f, 2, 100, "Obrazenia +1" });
+	lightning.levels.push_back({ 10.f, 1.0f, 0.2f, 0.f, 1.0f, 2, 100, "Obrazenia +2" });
+	lightning.levels.push_back({ 10.f, 1.0f, 0.2f, 0.f, 1.0f, 3, 100, "Ilosc +1" });
 	weaponDB.push_back(lightning);
 }
 
@@ -796,6 +799,12 @@ int main() {
 	if (!bananTexture.loadFromFile("sprites/banan.png")) {
 		std::cout << "Brak pliku banan.png!" << std::endl;
 		return-1;
+	}
+
+	sf::Texture magnesTexture;
+	if (!magnesTexture.loadFromFile("sprites/magnes.png")) {
+		std::cout << "Brak pliku magnes.png!" << std::endl;
+		return -1;
 	}
 
 	//       --- AUDIO  ---
@@ -2154,6 +2163,7 @@ int main() {
 		int exp = 0;
 		int nextExp = 50;
 		int killCount = 0;
+		int magnetsCollected = 0;
 
 		std::vector<Enemy> enemies;
 		std::vector<Projectile> projectiles;
@@ -2165,7 +2175,7 @@ int main() {
 		sf::Clock spawnClock;
 		sf::Clock regenClock;
 		float gameTime = 0.f;
-		killCount = 0;
+		float activeMagnetTimer = 0.0f;
 
 		sf::RectangleShape ground({ mapWidth, 100.f });
 		ground.setFillColor(sf::Color::Transparent);
@@ -2218,11 +2228,29 @@ int main() {
 				}
 			}
 
-			window.clear(sf::Color::Black);
+			// --- RYSOWANIE EKRANU WYBORU BRONI (Z T£EM GRY) ---
+			window.clear(sf::Color(20, 20, 20));
+
+			// 1. Ustawienie kamery na gracza (¿eby by³o widaæ t³o)
+			sf::View view(sf::FloatRect({ 0.f, 0.f }, { (float)windowWidth, (float)windowHeight }));
+			float camX = std::clamp(player.getPosition().x, windowWidth / 2.f, mapWidth - windowWidth / 2.f);
+			view.setCenter({ camX, windowHeight / 2.f });
+			window.setView(view);
+
+			// 2. Rysowanie œwiata (T³o, Ziemia, Portale, Gracz)
+			window.draw(background);
+			window.draw(ground);
+			for (auto& p : portals) window.draw(p.sprite);
+			window.draw(player);
+
+			// 3. Powrót do kamery UI
+			window.setView(window.getDefaultView());
+
+			// 4. Rysowanie przyciemnienia i Menu
+			window.draw(overlay); // To daje efekt "pauzy"
 			window.draw(title);
 
 			for (auto& btn : weaponButtons) {
-				// Logika Hover (podœwietlanie) - mo¿e zostaæ poza pêtl¹ zdarzeñ
 				if (btn.shape.getGlobalBounds().contains(mousePos)) {
 					btn.shape.setOutlineThickness(4.f);
 				}
@@ -2281,6 +2309,7 @@ int main() {
 						nextExp = 50;
 						gameTime = 0.f;
 						killCount = 0;
+						magnetsCollected = 0;
 
 						// 2. Czyszczenie wektorów
 						enemies.clear();
@@ -2329,7 +2358,24 @@ int main() {
 								}
 							}
 
-							window.clear(sf::Color::Black);
+							// --- RYSOWANIE (IDENTYCZNE JAK NA STARCIE) ---
+							window.clear(sf::Color(20, 20, 20));
+
+							// Kamera na gracza
+							sf::View view(sf::FloatRect({ 0.f, 0.f }, { (float)windowWidth, (float)windowHeight }));
+							float camX = std::clamp(player.getPosition().x, windowWidth / 2.f, mapWidth - windowWidth / 2.f);
+							view.setCenter({ camX, windowHeight / 2.f });
+							window.setView(view);
+
+							// Œwiat
+							window.draw(background);
+							window.draw(ground);
+							for (auto& p : portals) window.draw(p.sprite);
+							window.draw(player);
+
+							// UI
+							window.setView(window.getDefaultView());
+							window.draw(overlay); // Przyciemnienie
 							window.draw(title);
 
 							for (auto& btn : weaponButtons) {
@@ -2393,22 +2439,23 @@ int main() {
 				std::string statsStr = "--- STATYSTYKI ---\n\n";
 
 				statsStr += "Zabici wrogowie: " + std::to_string(killCount) + "\n\n";
+				statsStr += "Zebrane magnesy: " + std::to_string(magnetsCollected) + "\n\n";
 
 				statsStr += "Max HP: " + std::to_string(pStats.maxHp) + "\n";
 				statsStr += "Regeneracja: " + std::to_string(pStats.regen).substr(0, 3) + "/s\n";
 				statsStr += "Pancerz: " + std::to_string(pStats.armor) + "\n\n";
 
 				// Mno¿ymy razy 100, ¿eby pokazaæ procenty (np. 1.1 -> 110%)
-				statsStr += "Sila (Might): " + std::to_string((int)(pStats.might * 100)) + "%\n";
-				statsStr += "Obszar (Area): " + std::to_string((int)(pStats.area * 100)) + "%\n";
+				statsStr += "Sila: " + std::to_string((int)(pStats.might * 100)) + "%\n";
+				statsStr += "Obszar): " + std::to_string((int)(pStats.area * 100)) + "%\n";
 				statsStr += "Szybkosc pocisku: " + std::to_string((int)(pStats.speed * 100)) + "%\n";
 				statsStr += "Czas trwania: " + std::to_string((int)(pStats.duration * 100)) + "%\n";
 
 				// Cooldown im mniejszy tym lepiej, wiêc pokazujemy np. 90% (czyli -10%)
 				statsStr += "Cooldown: " + std::to_string((int)(pStats.cooldown * 100)) + "%\n";
 
-				statsStr += "Ilosc (Amount): +" + std::to_string(pStats.amount) + "\n";
-				statsStr += "Zasieg (Magnet): " + std::to_string((int)pStats.magnet) + "\n";
+				statsStr += "Ilosc: +" + std::to_string(pStats.amount) + "\n";
+				statsStr += "Zasieg: " + std::to_string((int)pStats.magnet) + "\n";
 
 				pauseStatsText.setString(statsStr);
 				// --- 1. OBS£UGA RESTARTU ---
@@ -2425,6 +2472,8 @@ int main() {
 						// Reset zegarów i muzyki
 						spawnClock.restart();
 						regenClock.restart();
+						magnetsCollected = 0;
+						killCount = 0;
 						bgMusic.stop();
 					}
 				}
@@ -2452,6 +2501,22 @@ int main() {
 			}
 			else if (!isPaused) {
 				gameTime += dt;
+				// KONIEC GRY PO 6 MINUTACH ---
+				if (gameTime >= 360.0f) {
+					isGameOver = true;
+
+					// Zatrzymujemy muzykê i grê
+					bgMusic.stop();
+					levelUpSound.play(); // Mo¿esz u¿yæ levelUpSound jako fanfary zwyciêstwa
+
+					// Zmieniamy napis z "GAME OVER" na "ZWYCIÊSTWO"
+					gameOverTitle.setString("ZWYCIESTWO!");
+					gameOverTitle.setFillColor(sf::Color::Green);
+
+					// Centrujemy nowy napis (bo ma inn¹ d³ugoœæ ni¿ Game Over)
+					centerText(gameOverTitle, windowWidth / 2.f, windowHeight / 2.f - 100.f);
+				}
+				// ------------------------------------------
 
 				// --- REGENERACJA HP ---
 				if (pStats.regen > 0.f) {
@@ -2634,20 +2699,16 @@ int main() {
 				player.setPosition(hitbox.getPosition());
 
 				// --- SPAWNOWANIE PRZECIWNIKÓW  ---
-				float spawnDelay = 1.0f - (gameTime * 0.005f);
-				if (spawnDelay < 0.05f) spawnDelay = 0.05f;
+				float spawnDelay = 1.0f - (gameTime * 0.0031f);
+				if (spawnDelay < 0.06f) spawnDelay = 0.06f;
 
 				if (spawnClock.getElapsedTime().asSeconds() > spawnDelay) {
-					if (enemies.size() >= 300) {
-						spawnClock.restart(); // Resetujemy zegar, ¿eby spróbowa³ póŸniej
-					}
-					else {
 						// --- KOD BOSSA ---
-						if (!bossSpawned && gameTime >= 300.f) {// 5 minut
+						if (!bossSpawned && gameTime >= 270.f) {// 4.5minuty
 							Enemy boss;
 							boss.id = nextEnemyId++;
-							boss.hp = 2000.0f;
-							boss.maxHp = 2000.0f;
+							boss.hp = 3000.0f;
+							boss.maxHp = 3000.0f;
 							boss.isBoss = true;
 
 							// Wygl¹d bossa (Du¿y i inny kolor)
@@ -2681,7 +2742,6 @@ int main() {
 
 							// Nie spawnuj zwyk³ego wroga w tej samej klatce co bossa
 							spawnClock.restart();
-							continue; // PrzejdŸ do nastêpnej klatki pêtli
 						}
 					// ------------------------
 
@@ -2692,7 +2752,18 @@ int main() {
 					int enemyType = 0; // 0 = S³aby (Domyœlny)
 					int randVal = rand() % 100; // Losowa liczba 0-99
 
-					if (gameTime >= 180.f) { // Po 3 minutach
+					if (gameTime >= 300.f) {
+						// 0% S³abych
+						// 60% Œrednich (Ochrona)
+						// 40% Mocnych (Egzamin)
+						if (randVal < 50) {
+							enemyType = 1; // Œredni
+						}
+						else {
+							enemyType = 2; // Mocny
+						}
+					}
+					else if (gameTime >= 180.f) { // Po 3 minutach
 						// 50% S³aby, 30% Œredni, 20% Silny
 						if (randVal < 50) enemyType = 0;
 						else if (randVal < 80) enemyType = 1;
@@ -2717,7 +2788,7 @@ int main() {
 						Szczur.back().targetId = e.id;
 					}
 					else if (enemyType == 1) { // Œredni (od 2 min)
-						e.hp = 15.0f; e.maxHp = 15.0f;
+						e.hp = 25.0f; e.maxHp = 25.0f;
 						e.shape.setRadius(30.f);
 						e.shape.setFillColor(sf::Color::Transparent);
 						Ochrona.emplace_back(ochronaTexture, e.shape.getPosition());
@@ -2725,7 +2796,7 @@ int main() {
 						// Opcjonalnie wolniejszy? (logika prêdkoœci jest ni¿ej w pêtli ruchu)
 					}
 					else if (enemyType == 2) { // Twardy (od 4 min)
-						e.hp = 100.0f; e.maxHp = 100.0f;
+						e.hp = 60.0f; e.maxHp = 60.0f;
 						e.shape.setRadius(35.f);
 						e.shape.setFillColor(sf::Color::Transparent);
 						Egzamin.emplace_back(egzaminTexture, e.shape.getPosition());
@@ -2750,7 +2821,6 @@ int main() {
 					enemies.push_back(e);
 					spawnClock.restart();
 				}
-			}
 				// 3. BRONIE (STRZELANIE)
 				for (auto& w : weaponInventory) {
 					w.cooldownTimer -= dt;
@@ -2761,23 +2831,40 @@ int main() {
 
 					// Czosnek
 					if (w.def->id == GARLIC) {
-						bool zoneExists = false;
-						for (auto& z : zones) if (z.wId == GARLIC) zoneExists = true;
-						if (!zoneExists) {
-							DamageZone z; z.wId = GARLIC; z.maxLifeTime = 99999.f;
+						// Obliczamy aktualny promieñ w ka¿dej klatce
+						// 100.f to baza, stats.area to bonus z poziomu broni, pStats.area to pasywka (Candle)
+						float currentRadius = 100.f * stats.area * pStats.area;
 
-							// U¿ywamy stats.damage zamiast w.def.damage
+						bool zoneExists = false;
+						for (auto& z : zones) {
+							if (z.wId == GARLIC) {
+								zoneExists = true;
+
+								// AKTUALIZACJA ISTNIEJ¥CEJ STREFY
+								// Dziêki temu po wziêciu pasywki strefa uroœnie "na ¿ywo"
+								if (z.shape.getRadius() != currentRadius) {
+									z.shape.setRadius(currentRadius);
+									z.shape.setOrigin({ currentRadius, currentRadius });
+								}
+
+								// Aktualizujemy te¿ obra¿enia (np. po wziêciu Szpinaku)
+								z.damage = stats.damage * pStats.might;
+							}
+						}
+
+						// Jeœli strefa nie istnieje (np. pocz¹tek gry), stwórz j¹
+						if (!zoneExists) {
+							DamageZone z;
+							z.wId = GARLIC;
+							z.maxLifeTime = 99999.f;
 							z.damage = stats.damage * pStats.might;
 
-							// U¿ywamy stats.area
-							float r = 100.f * stats.area * pStats.area;
-
-							z.shape.setRadius(r);
+							z.shape.setRadius(currentRadius);
 							z.shape.setFillColor(sf::Color(0, 150, 0, 100));
-							z.shape.setOrigin({ r, r });
+							z.shape.setOrigin({ currentRadius, currentRadius });
 							zones.push_back(z);
 						}
-						continue;
+						continue; // Przechodzimy do nastêpnej broni, bo Czosnek nie strzela pociskami
 					}
 
 					if (w.cooldownTimer <= 0.f) {
@@ -2927,8 +3014,12 @@ int main() {
 
 							}
 							else if (w.def->id == BOOMERANG) {
-								bananaSound.setPitch(pitchVar);
-								bananaSound.play();
+								// DŸwiêk tylko dla pierwszego banana (¿eby nie og³uszyæ)
+								if (i == 0) {
+									float pVar = 0.9f + (float)(rand() % 20) / 100.f;
+									bananaSound.setPitch(pVar);
+									bananaSound.play();
+								}
 
 								p.startPos = player.getPosition();
 
@@ -2944,13 +3035,20 @@ int main() {
 									}
 								}
 
-								// 2. Lecimy do niego
-								p.velocity = normalize(target - player.getPosition()) * speed;
+								// 2. Obliczamy kierunek
+								sf::Vector2f dir = normalize(target - player.getPosition());
 
-								p.shape.setPosition(player.getPosition());
+								// Ustawiamy prêdkoœæ
+								p.velocity = dir * speed;
+
+								// 3. EFEKT "JEDEN ZA DRUGIM"
+								// Cofamy pozycjê startow¹ kolejnych bananów.
+								// 40.f to odstêp w pikselach miêdzy bananami.
+								p.shape.setPosition(player.getPosition() - (dir * ((float)i * 45.f)));
+
 								p.shape.setTexture(&bananTexture);
 								p.shape.setScale({ 2.0f, 2.0f });
-							}
+								}
 							else if (w.def->id == BIBLE) {
 								// LOGIKA BIBLII: Rozk³adamy równo po kole
 								// i=0 (0st), i=1 (180st) dla amount=2
@@ -3102,6 +3200,35 @@ int main() {
 										orb.value = 10; // Zwyk³y szczur
 									}
 									// ---------------------------------
+									if (rand() % 500 == 0) {                                                                                  //szansa na magnes 1 do 500
+
+										ExpOrb mag(magnesTexture);
+										mag.isMagnet = true;
+
+										// Resetujemy kolor na bia³y
+										mag.sprite.setColor(sf::Color::White);
+
+										// Ustawiamy wymiary (bezpiecznie)
+										sf::Vector2u texSize = magnesTexture.getSize();
+										if (texSize.x > 0 && texSize.y > 0) {
+											mag.sprite.setTextureRect(sf::IntRect({ 0, 0 }, { (int)texSize.x, (int)texSize.y }));
+											mag.sprite.setOrigin(sf::Vector2f(texSize.x / 2.f, texSize.y / 2.f));
+										}
+										else {
+											// Zabezpieczenie gdyby tekstura jednak nie zadzia³a³a
+											mag.sprite.setTexture(expOrbTexture);
+											mag.sprite.setTextureRect(sf::IntRect({ 0, 0 }, { 16, 16 }));
+											mag.sprite.setOrigin({ 8.f, 8.f });
+											mag.sprite.setColor(sf::Color::Magenta);
+										}
+
+										mag.sprite.setPosition(deathPos);
+
+										// Wyrzucamy magnes mocno w górê
+										mag.velocity = { 0.f, -800.f };
+
+										expOrbs.push_back(mag);
+									}
 
 									expOrbs.push_back(orb);
 								}
@@ -3284,153 +3411,178 @@ int main() {
 				}
 
 				// 7. EXP ORBS
-				for (size_t i = 0; i < expOrbs.size();) {
-					// --- ANIMACJA KULKI ---
-					expOrbs[i].animTimer += dt;
-					if (expOrbs[i].animTimer >= 0.1f) { // Szybkoœæ animacji (co 0.1s)
-						expOrbs[i].animTimer = 0.f;
-						expOrbs[i].currentFrame = (expOrbs[i].currentFrame + 1) % 4; // 4 klatki
+				if (activeMagnetTimer > 0.0f) {
+					activeMagnetTimer -= dt;
+				}
 
-						expOrbs[i].sprite.setTextureRect(sf::IntRect({ expOrbs[i].currentFrame * 16, 0 }, { 16, 16 }));
+				for (size_t i = 0; i < expOrbs.size();) {
+
+					// --- POPRAWKA: BLOKADA ANIMACJI DLA MAGNESU ---
+					// Animujemy tylko wtedy, gdy to NIE jest magnes (!isMagnet)
+					if (!expOrbs[i].isMagnet) {
+						expOrbs[i].animTimer += dt;
+						if (expOrbs[i].animTimer >= 0.1f) {
+							expOrbs[i].animTimer = 0.f;
+							expOrbs[i].currentFrame = (expOrbs[i].currentFrame + 1) % 4;
+							expOrbs[i].sprite.setTextureRect(sf::IntRect({ expOrbs[i].currentFrame * 16, 0 }, { 16, 16 }));
+						}
 					}
-					// ----------------------
-					// Magnes
-					float magnetRange = pStats.magnet;
+					// ---------------------------------------------
+
+					// --- B. LOGIKA PRZYCI¥GANIA ---
+					float currentMagnetRange = pStats.magnet;
+
+					// Jeœli aktywny super-magnes, zasiêg jest ogromny (ca³a mapa)
+					if (activeMagnetTimer > 0.0f) {
+						currentMagnetRange = 999999.0f;
+					}
+
 					sf::Vector2f dirToP = hitbox.getPosition() - expOrbs[i].sprite.getPosition();
-					if (vectorLength(dirToP) < magnetRange) {
-						expOrbs[i].velocity = normalize(dirToP) * 1200.f;
+					float dist = vectorLength(dirToP);
+
+					if (dist < currentMagnetRange) {
+						float pullSpeed = 1200.f;
+						if (activeMagnetTimer > 0.0f) pullSpeed = 2000.f;
+
+						expOrbs[i].velocity = normalize(dirToP) * pullSpeed;
 						expOrbs[i].isOnGround = false;
 					}
 					else if (!expOrbs[i].isOnGround) {
-						expOrbs[i].velocity.y += 1500.f * dt;
+						expOrbs[i].velocity.y += 1500.f * dt; // Grawitacja
 					}
 
 					expOrbs[i].sprite.move(expOrbs[i].velocity * dt);
 
+					// Kolizja z ziemi¹
 					if (expOrbs[i].sprite.getPosition().y + 5.f > ground.getPosition().y) {
 						expOrbs[i].sprite.setPosition({ expOrbs[i].sprite.getPosition().x, ground.getPosition().y - 5.f });
 						expOrbs[i].velocity.y = 0.f; expOrbs[i].velocity.x = 0.f; expOrbs[i].isOnGround = true;
 					}
 
+					// --- C. PODNOSZENIE ---
 					if (expOrbs[i].sprite.getGlobalBounds().findIntersection(hitbox.getGlobalBounds())) {
-						// ---- Muzyka Orbsowa ----
-						float randomPitch = 0.8f + (float)(rand() % 40) / 100.f; // Zakres 0.8 - 1.2
-						expSound.setPitch(randomPitch);
 
-						expSound.play();
-						// --------
+						// SPRAWDZAMY CZY TO MAGNES CZY XP
+						if (expOrbs[i].isMagnet) {
+							// --- EFEKT MAGNESU ---
+							activeMagnetTimer = 3.0f; // Aktywuj na 3 sekundy
+							magnetsCollected++;
 
-						exp += expOrbs[i].value;
-						if (exp >= nextExp) {
+							levelUpSound.setPitch(2.0f);
 							levelUpSound.play();
-							exp -= nextExp;
-							nextExp = (int)(nextExp * 1.2f);
-							level++;
-
-							// GENEROWANIE KART LEVEL UP
-							upgradeCards.clear();
-
-							// Pula dostêpnych opcji
-							std::vector<std::pair<int, int>> pool; // {type, index}
-
-							if (weaponInventory.size() < 3) {
-								for (int k = 0; k < (int)weaponDB.size(); ++k) {
-									bool has = false;
-									for (auto& w : weaponInventory) if (w.def->id == weaponDB[k].id) has = true;
-									if (!has) pool.push_back({ 0, k });
-								}
-							}
-							for (auto& w : weaponInventory) {
-								if (w.level < 7) {
-									for (int k = 0; k < (int)weaponDB.size(); ++k) if (weaponDB[k].id == w.def->id) pool.push_back({ 0, k });
-								}
-							}
-
-							if (passiveInventory.size() < 3) {
-								for (int k = 0; k < (int)passiveDB.size(); ++k) {
-									bool has = false; for (auto& p : passiveInventory) if (p.def.id == passiveDB[k].id) has = true;
-									if (!has) pool.push_back({ 1, k });
-								}
-							}
-							for (auto& p : passiveInventory) {
-								if (p.level < p.def.maxLevel) {
-									for (int k = 0; k < (int)passiveDB.size(); ++k) if (passiveDB[k].id == p.def.id) pool.push_back({ 1, k });
-								}
-							}
-
-							std::shuffle(pool.begin(), pool.end(), std::default_random_engine(std::time(0)));
-							int count = std::min((int)pool.size(), 3);
-
-							float cardW = 300.f, gap = 50.f;
-							float startX = (windowWidth - (count * cardW + (count - 1) * gap)) / 2.f;
-
-							for (int c = 0; c < count; ++c) {
-								upgradeCards.emplace_back(font);
-								UpgradeCard& card = upgradeCards.back();
-
-								int type = pool[c].first;
-								int idx = pool[c].second;
-								card.type = type;
-								card.index = idx;
-
-								card.shape.setSize({ cardW, 400.f });
-								card.shape.setFillColor(sf::Color(40, 40, 40));
-								card.shape.setOutlineThickness(2.f);
-								card.shape.setPosition({ startX + c * (cardW + gap), 300.f });
-
-								std::string titleStr, descStr;
-								sf::Color col;
-								bool isUp = false;
-								int nextLvl = 1;
-
-								if (type == 0) { // --- BROÑ ---
-									titleStr = weaponDB[idx].name;
-									col = weaponDB[idx].color;
-
-									// Sprawdzamy, czy mamy ju¿ tê broñ, ¿eby ustaliæ nastêpny poziom
-									for (auto& w : weaponInventory) {
-										if (w.def->id == weaponDB[idx].id) {
-											isUp = true;
-											nextLvl = w.level + 1;
-											break;
-										}
-									}
-
-									int levelIndex = nextLvl - 1;
-
-									// Sprawdzamy czy taki poziom istnieje w bazie (zabezpieczenie)
-									if (levelIndex < (int)weaponDB[idx].levels.size()) {
-										descStr = weaponDB[idx].levels[levelIndex].description;
-									}
-									else {
-										descStr = "Uzyskano maksymalny poziom";
-									}
-								}
-								else { // Pasywka
-									titleStr = passiveDB[idx].name;
-									descStr = passiveDB[idx].description;
-									col = passiveDB[idx].color;
-									for (auto& p : passiveInventory) if (p.def.id == passiveDB[idx].id) { isUp = true; nextLvl = p.level + 1; }
-								}
-
-								card.shape.setOutlineColor(col);
-								card.mainText.setString(titleStr);
-								card.mainText.setCharacterSize(28);
-								card.mainText.setFillColor(col);
-								centerText(card.mainText, card.shape.getPosition().x + 150.f, card.shape.getPosition().y + 50.f);
-
-								std::string sub = isUp ? "Ulepsz do poz. " + std::to_string(nextLvl) : "Nowy Przedmiot!";
-								card.subText.setString(sub + "\n\n" + descStr);
-								card.subText.setCharacterSize(20);
-								card.subText.setFillColor(sf::Color::White);
-
-								sf::FloatRect b = card.subText.getLocalBounds();
-								card.subText.setOrigin({ b.size.x / 2.f, 0.f });
-								card.subText.setPosition({ card.shape.getPosition().x + 150.f, card.shape.getPosition().y + 100.f });
-							}
-
-							if (!upgradeCards.empty()) isLevelUp = true;
 						}
+						else {
+							// --- ZWYK£Y XP ---
+							float randomPitch = 0.8f + (float)(rand() % 40) / 100.f;
+							expSound.setPitch(randomPitch);
+							expSound.play();
+
+							exp += expOrbs[i].value;
+
+							// Sprawdzanie Level Up
+							if (exp >= nextExp) {
+								levelUpSound.setPitch(1.0f);
+								levelUpSound.play();
+								exp -= nextExp;
+								nextExp = (int)(nextExp * 1.2f);
+								level++;
+
+								// GENEROWANIE KART LEVEL UP
+								upgradeCards.clear();
+
+								std::vector<std::pair<int, int>> pool;
+
+								if (weaponInventory.size() < 3) {
+									for (int k = 0; k < (int)weaponDB.size(); ++k) {
+										bool has = false;
+										for (auto& w : weaponInventory) if (w.def->id == weaponDB[k].id) has = true;
+										if (!has) pool.push_back({ 0, k });
+									}
+								}
+								for (auto& w : weaponInventory) {
+									if (w.level < 7) {
+										for (int k = 0; k < (int)weaponDB.size(); ++k) if (weaponDB[k].id == w.def->id) pool.push_back({ 0, k });
+									}
+								}
+
+								if (passiveInventory.size() < 3) {
+									for (int k = 0; k < (int)passiveDB.size(); ++k) {
+										bool has = false; for (auto& p : passiveInventory) if (p.def.id == passiveDB[k].id) has = true;
+										if (!has) pool.push_back({ 1, k });
+									}
+								}
+								for (auto& p : passiveInventory) {
+									if (p.level < p.def.maxLevel) {
+										for (int k = 0; k < (int)passiveDB.size(); ++k) if (passiveDB[k].id == p.def.id) pool.push_back({ 1, k });
+									}
+								}
+
+								std::shuffle(pool.begin(), pool.end(), std::default_random_engine(std::time(0)));
+								int count = std::min((int)pool.size(), 3);
+
+								float cardW = 300.f, gap = 50.f;
+								float startX = (windowWidth - (count * cardW + (count - 1) * gap)) / 2.f;
+
+								for (int c = 0; c < count; ++c) {
+									upgradeCards.emplace_back(font);
+									UpgradeCard& card = upgradeCards.back();
+
+									int type = pool[c].first;
+									int idx = pool[c].second;
+									card.type = type;
+									card.index = idx;
+
+									card.shape.setSize({ cardW, 400.f });
+									card.shape.setFillColor(sf::Color(40, 40, 40));
+									card.shape.setOutlineThickness(2.f);
+									card.shape.setPosition({ startX + c * (cardW + gap), 300.f });
+
+									std::string titleStr, descStr;
+									sf::Color col;
+									bool isUp = false;
+									int nextLvl = 1;
+
+									if (type == 0) { // --- BROÑ ---
+										titleStr = weaponDB[idx].name;
+										col = weaponDB[idx].color;
+										for (auto& w : weaponInventory) {
+											if (w.def->id == weaponDB[idx].id) {
+												isUp = true;
+												nextLvl = w.level + 1;
+												break;
+											}
+										}
+										int levelIndex = nextLvl - 1;
+										if (levelIndex < (int)weaponDB[idx].levels.size()) descStr = weaponDB[idx].levels[levelIndex].description;
+										else descStr = "Uzyskano maksymalny poziom";
+									}
+									else { // Pasywka
+										titleStr = passiveDB[idx].name;
+										descStr = passiveDB[idx].description;
+										col = passiveDB[idx].color;
+										for (auto& p : passiveInventory) if (p.def.id == passiveDB[idx].id) { isUp = true; nextLvl = p.level + 1; }
+									}
+
+									card.shape.setOutlineColor(col);
+									card.mainText.setString(titleStr);
+									card.mainText.setCharacterSize(28);
+									card.mainText.setFillColor(col);
+									centerText(card.mainText, card.shape.getPosition().x + 150.f, card.shape.getPosition().y + 50.f);
+
+									std::string sub = isUp ? "Ulepsz do poz. " + std::to_string(nextLvl) : "Nowy Przedmiot!";
+									card.subText.setString(sub + "\n\n" + descStr);
+									card.subText.setCharacterSize(20);
+									card.subText.setFillColor(sf::Color::White);
+
+									sf::FloatRect b = card.subText.getLocalBounds();
+									card.subText.setOrigin({ b.size.x / 2.f, 0.f });
+									card.subText.setPosition({ card.shape.getPosition().x + 150.f, card.shape.getPosition().y + 100.f });
+								}
+
+								if (!upgradeCards.empty()) isLevelUp = true;
+							}
+						}
+
 						expOrbs.erase(expOrbs.begin() + i);
 					}
 					else {
