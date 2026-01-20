@@ -13,27 +13,23 @@
 using namespace std;
 using namespace sf;
 
-// --- ENUMY ---
-
 enum WeaponId {
 	WHIP, MAGIC_WAND, KNIFE, AXE, BOOMERANG,
 	BIBLE, FIRE_WAND, GARLIC, HOLY_WATER, LIGHTNING
 };
 
 enum PassiveId {
-	HOLLOW_HEART,   // 1. Max HP
-	EMPTY_TOME,     // 2. Szybkostrzelnosc
-	BRACER,         // 3. Szybkosc pocisku
-	CANDLE,         // 4. Obszar
-	SPELLBINDER,    // 5. Czas trwania
-	SPINACH,        // 6. Obrazenia
-	PUMMAROLA,      // 7. Regeneracja
-	ATTRACTORB,     // 8. Magnes
-	ARMOR,          // 9. Pancerz
-	DUPLICATOR      // 10. Ilosc pociskow (Max lvl 3)
+	HOLLOW_HEART,
+	EMPTY_TOME,
+	BRACER,
+	CANDLE,
+	SPELLBINDER,
+	SPINACH,
+	PUMMAROLA,
+	ATTRACTORB,
+	ARMOR,
+	DUPLICATOR
 };
-
-// --- STRUKTURY DANYCH ---
 
 struct WeaponLevelStats {
 	float damage;
@@ -41,22 +37,20 @@ struct WeaponLevelStats {
 	float duration;
 	float speed;
 	float area;
-	int amount;        // Ile pocisków bazowo
+	int amount;
 	int pierce;
-	std::string description; // Opis ulepszenia, np. "+1 Damage"
+	std::string description;
 };
 
 struct WeaponDef {
 	WeaponId id;
 	std::string name;
 	sf::Color color;
-
-	// Lista poziomów. levels[0] to lvl 1, levels[1] to lvl 2 itd.
 	std::vector<WeaponLevelStats> levels;
 };
 
 struct ActiveWeapon {
-	WeaponDef* def; // WskaŸnik do bazy danych zeby nie kopiowaæ ca³ej listy poziomów
+	WeaponDef* def;
 	int level = 1;
 	float cooldownTimer = 0.0f;
 };
@@ -66,7 +60,7 @@ struct PassiveDef {
 	std::string name;
 	std::string description;
 	sf::Color color;
-	int maxLevel; // 7 dla wiêkszoœci, 3 dla duplikatora
+	int maxLevel;
 };
 
 struct ActivePassive {
@@ -74,19 +68,18 @@ struct ActivePassive {
 	int level = 1;
 };
 
-// Statystyki gracza przeliczane na biezaco
 struct PlayerStats {
 	int maxHp = 5;
 	float moveSpeed = 300.0f;
-	float might = 1.0f;         // Obrazenia (Spinach)
-	float area = 1.0f;          // Obszar (Candle)
-	float speed = 1.0f;         // Predkosc pocisku (Bracer)
-	float duration = 1.0f;      // Czas trwania (Spellbinder)
-	float cooldown = 1.0f;      // Redukcja cooldownu (Tome)
-	int amount = 0;             // Dodatkowe pociski (Duplicator)
-	float magnet = 100.0f;      // Zasieg (Attractorb)
-	float regen = 0.0f;         // HP na sekunde (Pummarola)
-	int armor = 0;              // Redukcja obrazen (Armor)
+	float might = 1.0f;
+	float area = 1.0f;
+	float speed = 1.0f;
+	float duration = 1.0f;
+	float cooldown = 1.0f;
+	int amount = 0;
+	float magnet = 100.0f;
+	float regen = 0.0f;
+	int armor = 0;
 };
 
 struct Enemy {
@@ -109,7 +102,7 @@ struct Projectile {
 	bool returning = false;
 	int pierceLeft = 0;
 	std::vector<int> hitEnemies;
-	float damage = 1.0f; // Obra¿enia pocisku
+	float damage = 1.0f;
 	float angleOffset = 0.0f;
 	float baseSpeed = 0.0f;
 };
@@ -130,7 +123,6 @@ struct ExpOrb {
 	bool isOnGround = false;
 	float animTimer = 0.0f;
 	int currentFrame = 0;
-
 	bool isMagnet = false;
 
 	ExpOrb(const sf::Texture& tex) : sprite(tex) {
@@ -157,28 +149,24 @@ struct Portal {
 };
 
 struct Lightning {
-
 	sf::Sprite sprite;
 	float animTimer = 0.0f;
 	int currentFrame = 0;
-	float lifeTime = 0.2f; // ile istnieje (sekundy)
-
+	float lifeTime = 0.2f;
 
 	Lightning(const sf::Texture& tex, sf::Vector2f pos) : sprite(tex) {
 		sprite.setTextureRect({ {0, 0}, {64, 64} });
 		sprite.setOrigin({ 16.f, 56.f });
 		sprite.setPosition(pos);
 		sprite.setScale({ 4.f, 4.f });
-
 	}
 };
 
 struct OchronaAnim {
-
 	sf::Sprite sprite;
 	float animTimer = 0.0f;
 	int currentFrame = 0;
-	float lifeTime = 2.0f; // ile animacja istnieje, np. 1 sekunda
+	float lifeTime = 2.0f;
 	int targetId = -1;
 
 	OchronaAnim(const sf::Texture& tex, sf::Vector2f pos) : sprite(tex) {
@@ -190,12 +178,10 @@ struct OchronaAnim {
 };
 
 struct SzczurAnim {
-
 	sf::Sprite sprite;
 	float animTimer = 0.0f;
 	int currentFrame = 0;
-	float lifeTime = 2.0f; // ile animacja istnieje, np. 1 sekunda
-
+	float lifeTime = 2.0f;
 	int targetId = -1;
 
 	SzczurAnim(const sf::Texture& tex, sf::Vector2f pos) : sprite(tex) {
@@ -205,21 +191,17 @@ struct SzczurAnim {
 		sprite.setScale({ 2.0f, 2.0f });
 	}
 };
+
 struct EgzaminAnim {
 	sf::Sprite sprite;
 	float animTimer = 0.0f;
 	int currentFrame = 0;
-	int targetId = -1; // ID wroga, do którego przypisana jest animacja
+	int targetId = -1;
 
 	EgzaminAnim(const sf::Texture& tex, sf::Vector2f pos) : sprite(tex) {
-		// Ustawiamy wycinek tekstury na pierwsz¹ klatkê (38x38)
 		sprite.setTextureRect({ {0, 0}, {38, 38} });
-
-		// Ustawiamy œrodek (origin) na po³owie wymiarów (19, 19)
 		sprite.setOrigin({ 19.f, 19.f });
-
 		sprite.setPosition(pos);
-		// Skala 2.5f, ¿eby by³ trochê wiêkszy od szczura (mo¿esz zmieniæ)
 		sprite.setScale({ 2.0f, 2.0f });
 	}
 };
@@ -231,15 +213,9 @@ struct BossAnim {
 	int targetId = -1;
 
 	BossAnim(const sf::Texture& tex, sf::Vector2f pos) : sprite(tex) {
-		// Klatka 64x64
 		sprite.setTextureRect({ {0, 0}, {64, 64} });
-
-		// Œrodek w po³owie (32, 32)
 		sprite.setOrigin({ 32.f, 32.f });
-
 		sprite.setPosition(pos);
-
-		// Skala 4.0, ¿eby by³ du¿y (boss ma du¿y hitbox radius=60)
 		sprite.setScale({ 4.0f, 4.0f });
 	}
 };
@@ -250,28 +226,23 @@ struct Scarf {
 	int currentFrame = 0;
 	bool finished = false;
 	int side = 1;
-	float scaleMult = 1.0f; // NOWE: Mno¿nik wielkoœci
+	float scaleMult = 1.0f;
 
-	// Konstruktor przyjmuje teraz 'sm' (sizeMult)
 	Scarf(const sf::Texture& tex, sf::Vector2f pos, int dir, int s, float sm)
 		: sprite(tex), side(s), scaleMult(sm)
 	{
 		sprite.setTextureRect(sf::IntRect({ 0, 0 }, { 1024, 1024 }));
 		sprite.setOrigin({ 512.f, 512.f });
 
-		// Obliczamy pozycjê (offset te¿ skalujemy, ¿eby szalik nie "wchodzi³" w gracza przy du¿ym rozmiarze)
 		float offsetDir = (float)(dir * side);
 		sprite.setPosition(pos + sf::Vector2f(65.f * offsetDir, -5.f));
 
-		// Ustawiamy startow¹ skalê uwzglêdniaj¹c mno¿nik (bazowe 0.125f * mno¿nik)
 		float baseScale = 0.125f * scaleMult;
 
 		if (offsetDir < 0) sprite.setScale({ -baseScale, baseScale });
 		else sprite.setScale({ baseScale, baseScale });
 	}
 };
-
-// --- STRUKTURY UI ---
 
 struct WeaponButton {
 	sf::RectangleShape shape;
@@ -284,16 +255,12 @@ struct UpgradeCard {
 	sf::RectangleShape shape;
 	sf::Text mainText;
 	sf::Text subText;
-
-	// Typ karty: 0 = Broñ, 1 = Pasywka
 	int type = 0;
-	int index = 0; // Indeks w bazie danych
+	int index = 0;
 	bool isNew = false;
 
 	UpgradeCard(const sf::Font& font) : mainText(font), subText(font) {}
 };
-
-// --- BAZA DANYCH ---
 
 std::vector<WeaponDef> weaponDB;
 
@@ -302,20 +269,12 @@ void initWeaponDB() {
 	whip.id = WHIP;
 	whip.name = "Szalik AGH";
 	whip.color = sf::Color(139, 69, 19);
-	// LVL 1 (Bazowy)
-	//                      damage, cooldown, duration, speed, area, amount, pierce, discription
 	whip.levels.push_back({ 10.f, 1.0f, 0.4f, 0.f, 1.0f, 1, 100, "Atakuje poziomo" });
-	// LVL 2
 	whip.levels.push_back({ 10.f, 1.0f, 0.4f, 0.f, 1.0f, 2, 100, "Ilosc +1 (Atakuje tyl)" });
-	// LVL 3
 	whip.levels.push_back({ 15.f, 1.0f, 0.4f, 0.f, 1.0f, 2, 100,  "Obrazenia +5" });
-	// LVL 4
 	whip.levels.push_back({ 20.f, 1.0f, 0.4f, 0.f, 1.1f, 2, 100, "Obrazenia +5 i Obszar 10%" });
-	// LVL 5
 	whip.levels.push_back({ 25.f, 1.0f, 0.4f, 0.f, 1.1f, 2, 100, "Obrazenia +5" });
-	// LVL 6
 	whip.levels.push_back({ 30.f, 1.0f, 0.4f, 0.f, 1.2f, 2, 100, "Obrazenia +5 i Obszar 10%" });
-	// LVL 7
 	whip.levels.push_back({ 35.f, 1.0f, 0.4f, 0.f, 1.2f, 2, 100, "Obrazenia +5" });
 
 	weaponDB.push_back(whip);
@@ -334,7 +293,6 @@ void initWeaponDB() {
 	wand.levels.push_back({ 15.f, 0.8f, 1.5f, 600.f, 1.0f, 3, 1, "Przechodzi przez \njednego wroga wiecej" });
 	weaponDB.push_back(wand);
 
-
 	WeaponDef knife;
 	knife.id = KNIFE;
 	knife.name = "Olowek";
@@ -352,7 +310,7 @@ void initWeaponDB() {
 	WeaponDef axe;
 	axe.id = AXE;
 	axe.name = "Krzeslo";
-	axe.color = sf::Color(129,69,19);
+	axe.color = sf::Color(129, 69, 19);
 
 	axe.levels.push_back({ 20.f, 1.5f, 3.0f, 500.f, 1.0f, 1, 5, "Leci w gore po paraboli" });
 	axe.levels.push_back({ 20.f, 1.5f, 3.0f, 500.f, 1.0f, 2, 5, "Ilosc +1" });
@@ -377,7 +335,6 @@ void initWeaponDB() {
 	banan.levels.push_back({ 15.f, 1.0f, 2.0f, 937.5f, 1.2f, 3, 3, "Ilosc +1 przebicie +1" });
 	weaponDB.push_back(banan);
 
-
 	WeaponDef bible;
 	bible.id = BIBLE;
 	bible.name = "Podrecznik do analizy";
@@ -391,7 +348,6 @@ void initWeaponDB() {
 	bible.levels.push_back({ 15.f, 1.0f, 3.0f, 1014.f, 1.50f, 3, 100, "Obszar zwiekszony o 25% \ni szybkosc o 30%" });
 	bible.levels.push_back({ 20.f, 1.0f, 3.0f, 1014.f, 1.50f, 3, 100, "Obrazenia +5" });
 	weaponDB.push_back(bible);
-
 
 	WeaponDef metal;
 	metal.id = FIRE_WAND;
@@ -407,7 +363,6 @@ void initWeaponDB() {
 	metal.levels.push_back({ 80.f, 1.0f, 3.0f, 288.f, 1.0f, 6, 5, "Obrazenia +10 i ilosc +2" });
 	weaponDB.push_back(metal);
 
-
 	WeaponDef stink;
 	stink.id = GARLIC;
 	stink.name = "Smierdzacy zapach";
@@ -422,7 +377,6 @@ void initWeaponDB() {
 	stink.levels.push_back({ 13.f, 0.6f, 3.0f, 600.f, 2.0f, 1, 1, "Obszar zwiekszony o 50% \ni obrazenia +2" });
 	weaponDB.push_back(stink);
 
-
 	WeaponDef flask;
 	flask.id = HOLY_WATER;
 	flask.name = "Fiolka z laboratorium";
@@ -430,13 +384,12 @@ void initWeaponDB() {
 
 	flask.levels.push_back({ 15.f, 0.8f, 2.0f, 175.f, 1.0f, 1, 0, "Tworzy plame" });
 	flask.levels.push_back({ 15.f, 0.8f, 2.0f, 175.f, 1.0f, 2, 0, "Ilosc +1" });
-	flask.levels.push_back({ 25.f, 0.8f, 2.5f, 175.f, 1.0f, 2, 0, "Efekt trwa 0,5s dluzej \ni obrazenia +10" });                               //------------------------------
+	flask.levels.push_back({ 25.f, 0.8f, 2.5f, 175.f, 1.0f, 2, 0, "Efekt trwa 0,5s dluzej \ni obrazenia +10" });
 	flask.levels.push_back({ 25.f, 0.8f, 2.5f, 175.f, 1.0f, 3, 0, "Ilosc +1" });
 	flask.levels.push_back({ 25.f, 0.8f, 2.8f, 175.f, 1.0f, 3, 0, "Efekt trwa 0,3s dluzej" });
 	flask.levels.push_back({ 35.f, 0.8f, 2.8f, 175.f, 1.0f, 3, 0, "Obrazenia +10" });
 	flask.levels.push_back({ 50.f, 0.8f, 3.3f, 175.f, 1.0f, 4, 0, "Efekt trwa 0,5s dluzej,\n ilosc +1 i obr +15" });
 	weaponDB.push_back(flask);
-
 
 	WeaponDef lightning;
 	lightning.id = LIGHTNING;
@@ -453,7 +406,6 @@ void initWeaponDB() {
 }
 
 std::vector<PassiveDef> passiveDB = {
-	// ID, Nazwa, Opis, Kolor, Max lvl
 	{HOLLOW_HEART, "Serce Witalnosci", "Zwieksza Max HP (+20%)", sf::Color(200, 0, 0), 5},
 	{EMPTY_TOME, "Energetyk", "Szybkostrzelnosc (-8% cooldown)", sf::Color(200, 200, 0), 5},
 	{BRACER, "Moc rzutu", "Szybkosc pocisku (+10%)", sf::Color(100, 100, 255), 5},
@@ -465,10 +417,6 @@ std::vector<PassiveDef> passiveDB = {
 	{ARMOR, "Pancerz", "Redukcja obrazen (+1)", sf::Color(150, 150, 150), 5},
 	{DUPLICATOR, "Duplikator chat GPT", "Ilosc pociskow (+1)", sf::Color(0, 255, 255), 2}
 };
-
-
-
-// --- FUNKCJE POMOCNICZE ---
 
 float vectorLength(sf::Vector2f v) {
 	return std::sqrt(v.x * v.x + v.y * v.y);
@@ -486,10 +434,8 @@ void centerText(sf::Text& text, float x, float y) {
 	text.setPosition({ x, y });
 }
 
-// Funkcja przeliczaj¹ca statystyki
 PlayerStats recalculateStats(const std::vector<ActivePassive>& passives) {
 	PlayerStats stats;
-	// Bazowe
 	stats.maxHp = 10;
 	stats.moveSpeed = 300.f;
 	stats.magnet = 100.f;
@@ -539,11 +485,9 @@ PlayerStats recalculateStats(const std::vector<ActivePassive>& passives) {
 			break;
 		}
 	}
-	// Limit cooldownu zeby nie bylo 0
 	if (stats.cooldown < 0.1f) stats.cooldown = 0.1f;
 	return stats;
 }
-// Funkcja do przypisywania klawiszy
 
 void keyBindingsFunction(
 	RenderWindow& window,
@@ -584,13 +528,11 @@ void keyBindingsFunction(
 					{
 						inControls = false;
 					}
-					// opcja usuniêcia przypisania klawisza 
 					else if (key->scancode == Keyboard::Scancode::Delete)
 					{
 						keyVariable = Keyboard::Scancode::Unknown;
 						inControls = false;
 					}
-					// mo¿liwoœæ zmienienia fullscreen na tryb okienkowy i odwrotnie za pomoc¹ klawisza F11
 					else if (key->scancode == Keyboard::Scancode::F11)
 					{
 						isFullscreen = !isFullscreen;
@@ -598,9 +540,7 @@ void keyBindingsFunction(
 						if (isFullscreen) window.create(VideoMode::getDesktopMode(), "AGH survival", Style::Default, State::Fullscreen);
 						else window.create(VideoMode({ winWidth, winHeight }), "AGH survival", Style::Default, State::Windowed);
 						window.setFramerateLimit(140);
-
 					}
-					// warunek, aby gra nie reagowa³a na klikniêcie okreœlonych klawiszy przy przypisywaniu klawiszy
 					else if (
 						key->scancode == Keyboard::Scancode::PrintScreen ||
 						key->scancode == Keyboard::Scancode::ScrollLock ||
@@ -613,7 +553,6 @@ void keyBindingsFunction(
 						)
 					{
 					}
-					// przypisywanie klawiszy
 					else
 					{
 						keyVariable = key->scancode;
@@ -627,15 +566,12 @@ void keyBindingsFunction(
 			window.display();
 		}
 		String newKeyName;
-		// zmiana nazwy klawisza po wciœniêciu Delete
 		if (keyVariable == Keyboard::Scancode::Unknown) {
 			newKeyName = L"Unknown";
 		}
-		// zmiana nazwy klawisza po przypisaniu okreœlonego klawisza
 		else {
 			newKeyName = Keyboard::getDescription(keyVariable);
 		}
-		// zmiana nazwy klawisza i wycentrowanie tekstu 
 		buttonText.setString(actionName + L" (" + newKeyName + L")");
 		centerText(buttonText, targetX, targetY);
 	}
@@ -651,7 +587,7 @@ int main() {
 	sf::RenderWindow window(sf::VideoMode({ windowWidth, windowHeight }), "AGH survival");
 	window.setFramerateLimit(140);
 
-	window.setKeyRepeatEnabled(false);//linia zeby przytrzymanie klawisza ESC nie robily sie dziwne rzeczy
+	window.setKeyRepeatEnabled(false);
 
 	bool isFullscreen = false;
 
@@ -661,7 +597,6 @@ int main() {
 	}
 
 	sf::Texture menuBgTexture;
-	// Pamiêtaj o poprawnej œcie¿ce i nazwie pliku!
 	if (!menuBgTexture.loadFromFile("sprites/mainmenu.png")) {
 		std::cout << "Brak pliku menu_bg.png!" << std::endl;
 		return -1;
@@ -678,9 +613,8 @@ int main() {
 	sf::Sprite background(bgTexture);
 	float mapWidth = (float)bgTexture.getSize().x;
 
-	initWeaponDB();//inicjalizacja bazy danych broni
+	initWeaponDB();
 
-	// wczytywanie czcionki
 	sf::Font font;
 	if (!font.openFromFile("czcionka/arial.ttf")) {
 		std::cout << "Brak pliku arial.ttf!" << std::endl;
@@ -691,14 +625,13 @@ int main() {
 	std::optional<sf::Cursor> customCursor;
 
 	if (cursorImage.loadFromFile("sprites/kursor.png")) {
-		customCursor = sf::Cursor::createFromPixels(cursorImage.getPixelsPtr(),cursorImage.getSize(),{ 0, 0 });
+		customCursor = sf::Cursor::createFromPixels(cursorImage.getPixelsPtr(), cursorImage.getSize(), { 0, 0 });
 
-		if (customCursor) { // Sprawdzamy czy uda³o siê stworzyæ kursor
+		if (customCursor) {
 			window.setMouseCursor(customCursor.value());
 		}
 	}
 
-	// PORTAl
 	sf::Texture portalTexture;
 	if (!portalTexture.loadFromFile("animacje/portal.png")) {
 		std::cout << "Brak pliku portal.png!" << std::endl;
@@ -707,9 +640,8 @@ int main() {
 	std::vector<Portal> portals;
 	float portalY = windowHeight - 85.f;
 
-	portals.emplace_back(portalTexture, 100.f, portalY);// Lewy portal (na pocz¹tku mapy)
-	portals.emplace_back(portalTexture, mapWidth - 100.f, portalY);// Prawy portal (na koñcu mapy)
-	// -------------
+	portals.emplace_back(portalTexture, 100.f, portalY);
+	portals.emplace_back(portalTexture, mapWidth - 100.f, portalY);
 
 	sf::Texture expOrbTexture;
 	if (!expOrbTexture.loadFromFile("animacje/exp_orb.png")) {
@@ -739,7 +671,7 @@ int main() {
 	std::vector<SzczurAnim>Szczur;
 
 	sf::Texture egzaminTexture;
-	if (!egzaminTexture.loadFromFile("animacje/egzamin.png")) { // Podaj tu swoj¹ nazwê pliku!
+	if (!egzaminTexture.loadFromFile("animacje/egzamin.png")) {
 		std::cout << "Brak pliku enemy3.png!" << std::endl;
 		return -1;
 	}
@@ -755,7 +687,7 @@ int main() {
 	sf::Texture szalikTexture;
 	if (!szalikTexture.loadFromFile("animacje/szalik.png")) {
 		std::cout << "Brak pliku szalik.png!" << std::endl;
-		return-1;
+		return -1;
 	}
 	std::vector<Scarf> szalik;
 
@@ -763,43 +695,43 @@ int main() {
 	sf::Texture olowekTexture;
 	if (!olowekTexture.loadFromFile("sprites/olowek.png")) {
 		std::cout << "Brak pliku olowek.png!" << std::endl;
-		return-1;
+		return -1;
 	}
 
 	sf::Texture krzesloTexture;
 	if (!krzesloTexture.loadFromFile("sprites/krzeslo.png")) {
 		std::cout << "Brak pliku krzeslo.png!" << std::endl;
-		return-1;
+		return -1;
 	}
 
 	sf::Texture ksiazkaTexture;
 	if (!ksiazkaTexture.loadFromFile("sprites/ksiazka.png")) {
 		std::cout << "Brak pliku ksiazka.png!" << std::endl;
-		return-1;
+		return -1;
 	}
 
 	sf::Texture piwoTexture;
 	if (!piwoTexture.loadFromFile("sprites/piwo.png")) {
 		std::cout << "Brak pliku piwo.png!" << std::endl;
-		return-1;
+		return -1;
 	}
 
 	sf::Texture potkaTexture;
 	if (!potkaTexture.loadFromFile("sprites/potka.png")) {
 		std::cout << "Brak pliku potka.png!" << std::endl;
-		return-1;
+		return -1;
 	}
 
 	sf::Texture stalTexture;
 	if (!stalTexture.loadFromFile("sprites/stal.png")) {
 		std::cout << "Brak pliku stal.png!" << std::endl;
-		return-1;
+		return -1;
 	}
 
 	sf::Texture bananTexture;
 	if (!bananTexture.loadFromFile("sprites/banan.png")) {
 		std::cout << "Brak pliku banan.png!" << std::endl;
-		return-1;
+		return -1;
 	}
 
 	sf::Texture magnesTexture;
@@ -808,14 +740,13 @@ int main() {
 		return -1;
 	}
 
-	//       --- AUDIO  ---
 	sf::Music bgMusic;
 	if (!bgMusic.openFromFile("dzwieki/music.ogg")) {
 		std::cout << "Brak pliku music.ogg!" << std::endl;
 		return -1;
 	}
 	float musicScale = 30.0f;
-	bgMusic.setLooping(true); // <--- ZMIANA: setLooping zamiast setLoop                // ustawienia muzyki
+	bgMusic.setLooping(true);
 	bgMusic.setVolume(musicScale);
 
 	sf::SoundBuffer jumpBuffer;
@@ -835,7 +766,7 @@ int main() {
 	expSound.setVolume(sfxScale * 0.3f);
 
 	sf::Sound jumpSound(jumpBuffer);
-	jumpSound.setVolume(sfxScale);                                                      // ustawienia g³oœnoœci skoku
+	jumpSound.setVolume(sfxScale);
 
 	sf::SoundBuffer clickBuffer;
 	if (!clickBuffer.loadFromFile("dzwieki/click.wav")) {
@@ -843,14 +774,14 @@ int main() {
 		return -1;
 	}
 	sf::Sound clickSound(clickBuffer);
-	clickSound.setVolume(sfxScale);                                                     // ustawienia g³oœnoœci klikniêcia
+	clickSound.setVolume(sfxScale);
 
 	sf::SoundBuffer gameOverBuffer;
 	if (!gameOverBuffer.loadFromFile("dzwieki/game_over.ogg")) {
 		std::cout << "Brak pliku game_over.ogg!" << std::endl;
 		return -1;
 	}
-	sf::Sound gameOverSound(gameOverBuffer);                                                     // ustawienia dŸwiêku gameover
+	sf::Sound gameOverSound(gameOverBuffer);
 	gameOverSound.setVolume(sfxScale * 1.5f);
 
 	sf::SoundBuffer levelUpBuffer;
@@ -965,7 +896,6 @@ int main() {
 	sf::Sound garlicHitSound(garlicHitBuffer);
 	garlicHitSound.setVolume(sfxScale * 0.5f);
 
-	// --- UI SETUP ---
 	sf::RectangleShape uiBar({ (float)windowWidth, 100.f }); uiBar.setFillColor(sf::Color(0, 0, 0, 150));
 	sf::RectangleShape overlay({ (float)windowWidth, (float)windowHeight }); overlay.setFillColor(sf::Color(0, 0, 0, 200));
 
@@ -978,7 +908,7 @@ int main() {
 
 	sf::Text title(font); title.setString("WYBIERZ BRON STARTOWA"); title.setCharacterSize(60); centerText(title, windowWidth / 2.f, 100.f);
 
-	sf::Text pauseTitle(font);                                                                                      // font to czcionka
+	sf::Text pauseTitle(font);
 	pauseTitle.setString("PAUZA");
 	pauseTitle.setCharacterSize(80);
 	pauseTitle.setFillColor(sf::Color::Yellow);
@@ -1011,7 +941,6 @@ int main() {
 	gameOverTitle.setString("GAME OVER"); gameOverTitle.setCharacterSize(100); gameOverTitle.setFillColor(sf::Color::Red); centerText(gameOverTitle, windowWidth / 2.f, windowHeight / 2.f - 100.f);
 	restartButton.setString("RESTART"); restartButton.setCharacterSize(60); restartButton.setFillColor(sf::Color::White); centerText(restartButton, windowWidth / 2.f, windowHeight / 2.f + 100.f);
 
-	// --- SETUP PRZYCISKÓW WYBORU BRONI ---
 	std::vector<WeaponButton> weaponButtons;
 	weaponButtons.reserve(weaponDB.size());
 
@@ -1034,7 +963,6 @@ int main() {
 		col++; if (col > 3) { col = 0; row++; }
 	}
 
-	// --- SETUP MENU ---
 	sf::Text menuTitle(font);
 	menuTitle.setString(" AGH Survival");
 	menuTitle.setCharacterSize(80);
@@ -1059,8 +987,6 @@ int main() {
 	menuExit.setOutlineThickness(1.5f);
 	centerText(menuExit, windowWidth / 2.f, windowHeight / 2.f + 200.f);
 
-	// --- Napisy - G³ówne ustawienia --- 
-
 	Text menuSettings(font);
 	menuSettings.setString("USTAWIENIA");
 	menuSettings.setCharacterSize(50);
@@ -1070,7 +996,7 @@ int main() {
 	centerText(menuSettings, windowWidth / 2.0f, windowHeight / 2.0f + 100.0f);
 
 	Text settingsTitle(font);
-	settingsTitle.setString("               USTAWIENIA              ");
+	settingsTitle.setString("               USTAWIENIA              ");
 	settingsTitle.setCharacterSize(80);
 	settingsTitle.setFillColor(Color::Red);
 	settingsTitle.setOutlineColor(Color::White);
@@ -1109,10 +1035,8 @@ int main() {
 	SettingsExit.setOutlineThickness(1.5f);
 	centerText(SettingsExit, windowWidth / 2.0f, windowHeight / 2.0f + 250.0f);
 
-	// --- GRAFIKA ---
-
 	Text graphicsSettingsTitle(font);
-	graphicsSettingsTitle.setString(L"               GRAFIKA              ");
+	graphicsSettingsTitle.setString(L"               GRAFIKA              ");
 	graphicsSettingsTitle.setCharacterSize(80);
 	graphicsSettingsTitle.setFillColor(Color::Red);
 	graphicsSettingsTitle.setOutlineColor(Color::White);
@@ -1143,32 +1067,26 @@ int main() {
 	graphicsSettingsExit.setOutlineThickness(1.5f);
 	centerText(graphicsSettingsExit, windowWidth / 2.0f, windowHeight / 2.0f + 150.0f);
 
-	// --- STEROWANIE ---
-
 	Text keyBindingsTitle(font);
-	keyBindingsTitle.setString(L"               STEROWANIE              ");
+	keyBindingsTitle.setString(L"               STEROWANIE              ");
 	keyBindingsTitle.setCharacterSize(80);
 	keyBindingsTitle.setFillColor(Color::Red);
 	keyBindingsTitle.setOutlineColor(Color::White);
 	keyBindingsTitle.setOutlineThickness(2.f);
 	centerText(keyBindingsTitle, windowWidth / 2.f, windowHeight / 2.f - 400.0f);
 
-	// --- Sterowanie (mechanicznie) SKOK ---
 	Keyboard::Scancode keyJump1 = Keyboard::Scancode::Up;
 	Keyboard::Scancode keyJump2 = Keyboard::Scancode::W;
 	Keyboard::Scancode keyJump3 = Keyboard::Scancode::Space;
 
-	// --- Sterowanie (mechanicznie) LEWO ---
 	Keyboard::Scancode keyLeft1 = Keyboard::Scancode::Left;
 	Keyboard::Scancode keyLeft2 = Keyboard::Scancode::A;
 	Keyboard::Scancode keyLeft3 = Keyboard::Scancode::Unknown;
 
-	// --- Sterowanie (mechanicznie) BIEG ---
 	Keyboard::Scancode keyRun1 = Keyboard::Scancode::Down;
 	Keyboard::Scancode keyRun2 = Keyboard::Scancode::S;
 	Keyboard::Scancode keyRun3 = Keyboard::Scancode::LShift;
 
-	// --- Sterowanie (mechanicznie) PRAWO ---
 	Keyboard::Scancode keyRight1 = Keyboard::Scancode::Right;
 	Keyboard::Scancode keyRight2 = Keyboard::Scancode::D;
 	Keyboard::Scancode keyRight3 = Keyboard::Scancode::Unknown;
@@ -1298,24 +1216,20 @@ int main() {
 	centerText(keyBindingsExit, windowWidth / 2.0f, windowHeight / 2.0f + 250.0f);
 
 	Text ControlsTitle(font);
-	ControlsTitle.setString(L"          WCIŒNIJ KLAWISZ, KTÓRY CHCESZ PRZYPISAÆ,\n                  DELETE, ABY USUN¥Æ PRZYPISANIE\n                                    LUB\n                           ESC, ABY WYJŒÆ");
+	ControlsTitle.setString(L"          WCIŒNIJ KLAWISZ, KTÓRY CHCESZ PRZYPISAÆ,\n                  DELETE, ABY USUN¥Æ PRZYPISANIE\n                                    LUB\n                           ESC, ABY WYJŒÆ");
 	ControlsTitle.setCharacterSize(50);
 	ControlsTitle.setFillColor(Color(0xFFFFFFFF));
 	ControlsTitle.setOutlineColor(Color(0x000000FF));
 	ControlsTitle.setOutlineThickness(2.f);
 	centerText(ControlsTitle, windowWidth / 2.f, windowHeight / 2.f - 400.0f);
 
-	// --- Ustawienia g³oœnoœci ---   
-
 	Text volumeSettingsTitle(font);
-	volumeSettingsTitle.setString(L"               DWIÊK              ");
+	volumeSettingsTitle.setString(L"               DWIÊK              ");
 	volumeSettingsTitle.setCharacterSize(80);
 	volumeSettingsTitle.setFillColor(Color::Red);
 	volumeSettingsTitle.setOutlineColor(Color::White);
 	volumeSettingsTitle.setOutlineThickness(2.f);
 	centerText(volumeSettingsTitle, windowWidth / 2.f, windowHeight / 2.f - 400.0f);
-
-	// --- Napisy - Muzyka ---
 
 	Text musicSettings(font);
 	musicSettings.setString(L"MUZYKA");
@@ -1324,8 +1238,6 @@ int main() {
 	musicSettings.setOutlineColor(Color(0x000000FF));
 	musicSettings.setOutlineThickness(1.5f);
 	centerText(musicSettings, windowWidth / 2.0f, windowHeight / 2.0f - 250.0f);
-
-	// --- Graficzne ustawianie suwaka muzyki --- 
 
 	RectangleShape musicSliderBg({ 400.f, 10.f });
 	musicSliderBg.setFillColor(Color(0xD3D3D3FF));
@@ -1340,7 +1252,6 @@ int main() {
 	musicSliderButton.setOutlineThickness(1.5f);
 	musicSliderButton.setOrigin({ 10.f, 15.f });
 
-	// VolumeMusicScale - maksymalna mo¿liwa g³oœnoœæ muzyki
 	float volumeMusicScale = (musicScale + 70.0f);
 
 	float centerX = (float)windowWidth / 2.0f;
@@ -1348,8 +1259,6 @@ int main() {
 	float SliderMusicStart = centerX - 200.f;
 	float musicStartX = SliderMusicStart + (bgMusic.getVolume() / volumeMusicScale) * 400.f;
 	musicSliderButton.setPosition({ musicStartX, musicY });
-
-	// --- Przyciski Start i Stop - Muzyka ---
 
 	Text musicStart(font);
 	musicStart.setString(L"|>");
@@ -1366,8 +1275,6 @@ int main() {
 	musicStop.setOutlineColor(Color(0x000000FF));
 	musicStop.setOutlineThickness(1.5f);
 	centerText(musicStop, windowWidth / 2.0f + 50.0f, windowHeight / 2.0f - 100.0f);
-
-	// --- Napisy - SFX ---
 
 	Text sfxSettings(font);
 	sfxSettings.setString(L"SFX");
@@ -1390,7 +1297,6 @@ int main() {
 	sfxSliderButton.setOutlineThickness(1.5f);
 	sfxSliderButton.setOrigin({ 10.f, 15.f });
 
-	// VolumeSfxScale - maksymalna mo¿liwa g³oœnoœæ SFX
 	float volumeSfxScale = (sfxScale + 50.0f);
 
 	centerX = (float)windowWidth / 2.0f;
@@ -1398,8 +1304,6 @@ int main() {
 	float SliderSfxStart = centerX - 200.f;
 	float sfxStartX = SliderSfxStart + (jumpSound.getVolume() / volumeSfxScale) * 400.f;
 	sfxSliderButton.setPosition({ sfxStartX, sfxY });
-
-	// --- Przyciski Start i Stop - SFX ---
 
 	Text sfxStart(font);
 	sfxStart.setString(L"|>");
@@ -1437,9 +1341,8 @@ int main() {
 
 	while (window.isOpen()) {
 
-		// --- PÊTLA MENU G£ÓWNEGO ---
 		while (window.isOpen() && inMainMenu) {
-			sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window); // Update pozycji myszki na pocz¹tku klatki
+			sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
 
 			while (const std::optional event = window.pollEvent()) {
 				if (event->is<sf::Event::Closed>()) { window.close(); return 0; }
@@ -1455,15 +1358,12 @@ int main() {
 						}
 					}
 				}
-				// ZMIANA: Obs³uga klikniêcia jako ZDARZENIE (raz na klik), a nie stan
 				else if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>()) {
 					if (mouseBtn->button == Mouse::Button::Left) {
-						if (menuStart.getGlobalBounds().contains(mousePos)) {                                                              // warunek w którym po klikniêciu start dzieje siê reszta
-							clickSound.play();                                                                                             //
-							inMainMenu = false; // Przejœcie do nastêpnego ekranu                                                          
+						if (menuStart.getGlobalBounds().contains(mousePos)) {
+							clickSound.play();
+							inMainMenu = false;
 						}
-
-						// --- Menu ustawieñ ---
 
 						if (menuSettings.getGlobalBounds().contains(mousePos))
 						{
@@ -1471,10 +1371,9 @@ int main() {
 
 							bool inSettings = true;
 
-							// --- W ustawieniach ---
 							while (window.isOpen() && inSettings)
 							{
-								sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);   // aktualizacja pozycji myszki
+								sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
 
 								while (const optional event = window.pollEvent())
 								{
@@ -1487,7 +1386,6 @@ int main() {
 									{
 										if (mouseBtn->button == Mouse::Button::Left)
 										{
-											// klikniêcie PRZYPISYWANIE KLAWISZY
 											if (keyBindings.getGlobalBounds().contains(mousePos))
 											{
 												clickSound.play();
@@ -1525,7 +1423,6 @@ int main() {
 														{
 															if (mouseBtn->button == Mouse::Button::Left)
 															{
-																// Wywo³anie funkcji przypisywania klawiszy 12 razy (na 12 przycisków)
 																keyBindingsFunction(window, clickSound, Jump1, keyJump1, L"SKOK", windowWidth / 2.0f - 500.0f, windowHeight / 2.0f - 250.0f, ControlsTitle, isFullscreen, windowWidth, windowHeight, mousePos);
 																keyBindingsFunction(window, clickSound, Jump2, keyJump2, L"SKOK", windowWidth / 2.0f, windowHeight / 2.0f - 250.0f, ControlsTitle, isFullscreen, windowWidth, windowHeight, mousePos);
 																keyBindingsFunction(window, clickSound, Jump3, keyJump3, L"SKOK", windowWidth / 2.0f + 500.0f, windowHeight / 2.0f - 250.0f, ControlsTitle, isFullscreen, windowWidth, windowHeight, mousePos);
@@ -1547,12 +1444,10 @@ int main() {
 														{
 															if (mouseBtn->button == Mouse::Button::Left)
 															{
-																// klikniêcie ZRESETUJ
 																if (keyBindingsReset.getGlobalBounds().contains(mousePos))
 																{
 																	clickSound.play();
 
-																	// Zmiana (mechaniczna) klawiszy 
 																	keyJump1 = Keyboard::Scancode::Up;
 																	keyJump2 = Keyboard::Scancode::W;
 																	keyJump3 = Keyboard::Scancode::Space;
@@ -1569,7 +1464,6 @@ int main() {
 																	keyRight2 = Keyboard::Scancode::D;
 																	keyRight3 = Keyboard::Scancode::Unknown;
 
-																	// Zmiana (graficzna) klawiszy 
 																	Jump1.setString(L"SKOK (" + Keyboard::getDescription(keyJump1) + L")");
 																	centerText(Jump1, windowWidth / 2.0f - 500.0f, windowHeight / 2.0f - 250.0f);
 																	Jump2.setString(L"SKOK (" + Keyboard::getDescription(keyJump2) + L")");
@@ -1598,7 +1492,6 @@ int main() {
 																	Right3.setString(L"PRAWO (" + Keyboard::getDescription(keyRight3) + L")");
 																	centerText(Right3, windowWidth / 2.0f + 500.0f, windowHeight / 2.0f + 50.0f);
 																}
-																// klikniêcie WYJŒCIE
 																if (keyBindingsExit.getGlobalBounds().contains(mousePos))
 																{
 																	clickSound.play();
@@ -1607,11 +1500,6 @@ int main() {
 															}
 														}
 													}
-
-													// tworzenie okna do przypisywania klawiszy
-													// inKeyBindings = false wraca do ustawieñ
-
-													// zmiana koloru po najechaniu myszk¹ - ustawienia sterowania
 
 													if (Jump1.getGlobalBounds().contains(mousePos)) Jump1.setFillColor(Color(0x008000FF));
 													else Jump1.setFillColor(Color(0x6B8E23FF));
@@ -1676,7 +1564,6 @@ int main() {
 													window.display();
 												}
 											}
-											// klikniêcie DWIÊK
 											if (volumeSettings.getGlobalBounds().contains(mousePos))
 											{
 												clickSound.play();
@@ -1696,7 +1583,7 @@ int main() {
 													{
 														if (event->is<Event::Closed>())
 														{
-															clickSound.play();                                      // w³¹czenie/wy³¹czenie okreœlonych dŸwiêków
+															clickSound.play();
 															bgMusic.stop();
 															jumpSound.setLooping(false);
 															jumpSound.stop();
@@ -1730,7 +1617,6 @@ int main() {
 																isDraggingSfx = false;
 															}
 														}
-														// klikniêcie |> lub || lub ZRESETUJ
 														if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
 														{
 															if (mouseBtn->button == Mouse::Button::Left)
@@ -1815,7 +1701,7 @@ int main() {
 
 															musicSliderButton.setPosition({ newX, musicSliderBg.getPosition().y });
 
-															float percent = (newX - musicleft) / 400.0f; // 400.0f do d³ugoœæ paska
+															float percent = (newX - musicleft) / 400.0f;
 
 															bgMusic.setVolume(percent * volumeMusicScale);
 														}
@@ -1835,26 +1721,24 @@ int main() {
 															jumpSound.setVolume(percent * volumeSfxScale);
 															clickSound.setVolume(percent * volumeSfxScale);
 															gameOverSound.setVolume(percent * volumeSfxScale * 1.5f);
-															expSound.setVolume(percent* volumeSfxScale * 0.3f);
-															levelUpSound.setVolume(percent* volumeSfxScale * 1.2f);
-															bossDeathSound.setVolume(percent* volumeSfxScale * 2.0f);
-															bossHitSound.setVolume(percent* volumeSfxScale * 2.0f);
-															hurtSound.setVolume(percent* volumeSfxScale * 1.2f);
-															lightningSound.setVolume(percent* volumeSfxScale * 0.8f);
-															whipSound.setVolume(percent* volumeSfxScale * 0.8f);
-															beerSound.setVolume(percent* volumeSfxScale * 0.6f);
-															pencilSound.setVolume(percent* volumeSfxScale * 0.7f);
-															chairSound.setVolume(percent* volumeSfxScale);
-															bananaSound.setVolume(percent* volumeSfxScale * 0.8f);
-															stalSound.setVolume(percent* volumeSfxScale * 0.8f);
-															flaskSound.setVolume(percent* volumeSfxScale * 0.8f);
-															bibleHitSound.setVolume(percent* volumeSfxScale * 0.8f);
-															garlicHitSound.setVolume(percent* volumeSfxScale * 0.5f);
+															expSound.setVolume(percent * volumeSfxScale * 0.3f);
+															levelUpSound.setVolume(percent * volumeSfxScale * 1.2f);
+															bossDeathSound.setVolume(percent * volumeSfxScale * 2.0f);
+															bossHitSound.setVolume(percent * volumeSfxScale * 2.0f);
+															hurtSound.setVolume(percent * volumeSfxScale * 1.2f);
+															lightningSound.setVolume(percent * volumeSfxScale * 0.8f);
+															whipSound.setVolume(percent * volumeSfxScale * 0.8f);
+															beerSound.setVolume(percent * volumeSfxScale * 0.6f);
+															pencilSound.setVolume(percent * volumeSfxScale * 0.7f);
+															chairSound.setVolume(percent * volumeSfxScale);
+															bananaSound.setVolume(percent * volumeSfxScale * 0.8f);
+															stalSound.setVolume(percent * volumeSfxScale * 0.8f);
+															flaskSound.setVolume(percent * volumeSfxScale * 0.8f);
+															bibleHitSound.setVolume(percent * volumeSfxScale * 0.8f);
+															garlicHitSound.setVolume(percent * volumeSfxScale * 0.5f);
 
 														}
 													}
-
-													// zmiana koloru / gruboœci kontur po najechaniu myszk¹ - ustawienia g³oœnoœci
 
 													if (musicStart.getGlobalBounds().contains(mousePos)) musicStart.setOutlineThickness(3.0f);
 													else musicStart.setOutlineThickness(1.5f);
@@ -1873,8 +1757,6 @@ int main() {
 
 													if (volumeSettingsExit.getGlobalBounds().contains(mousePos)) volumeSettingsExit.setFillColor(Color::Blue);
 													else volumeSettingsExit.setFillColor(Color(0x008080FF));
-
-													// tworzenie okna do ustawieñ g³oœnoœci
 
 													window.clear(Color(0x808080FF));
 
@@ -1898,7 +1780,6 @@ int main() {
 													window.display();
 												}
 											}
-											// klikniêcie GRAFIKA
 											if (graphicsSettings.getGlobalBounds().contains(mousePos))
 											{
 												clickSound.play();
@@ -1936,7 +1817,6 @@ int main() {
 														{
 															if (mouseBtn->button == Mouse::Button::Left)
 															{
-																// klikniêcie PE£NY EKRAN
 																if (fullscreenSettings.getGlobalBounds().contains(mousePos))
 																{
 																	clickSound.play();
@@ -1953,7 +1833,6 @@ int main() {
 																	}
 																	else {}
 																}
-																// klikniêcie TRYB OKIENKOWY
 																if (windowedSettings.getGlobalBounds().contains(mousePos))
 																{
 																	clickSound.play();
@@ -1970,7 +1849,6 @@ int main() {
 																	}
 																	else {}
 																}
-																// kilkniêcie WYJŒCIE
 																if (graphicsSettingsExit.getGlobalBounds().contains(mousePos))
 																{
 																	clickSound.play();
@@ -2032,8 +1910,6 @@ int main() {
 
 								}
 
-								// zmiana koloru po najechaniu myszk¹ - ustawienia
-
 								if (graphicsSettings.getGlobalBounds().contains(mousePos)) graphicsSettings.setFillColor(Color::Blue);
 								else graphicsSettings.setFillColor(Color(0x008080FF));
 
@@ -2045,8 +1921,6 @@ int main() {
 
 								if (SettingsExit.getGlobalBounds().contains(mousePos)) SettingsExit.setFillColor(Color(0x8B4000FF));
 								else SettingsExit.setFillColor(Color(0xFFA500FF));
-
-								// tworzenie okna ustawieñ
 
 								window.clear(Color(0x808080FF));
 
@@ -2060,10 +1934,7 @@ int main() {
 							}
 						}
 
-						//***********
-
 						if (menuExit.getGlobalBounds().contains(mousePos)) {
-							// Opcjonalnie: ma³a pauza, ¿eby dŸwiêk zd¹¿y³ wybrzmieæ przed zamkniêciem         
 							clickSound.play();
 							sf::sleep(sf::milliseconds(150));
 							window.close();
@@ -2073,19 +1944,15 @@ int main() {
 				}
 			}
 
-
-
-
-			// Efekty najechania (Hover) - robimy poza pêtl¹ zdarzeñ, ¿eby dzia³o siê ca³y czas
-			if (menuStart.getGlobalBounds().contains(mousePos)) menuStart.setFillColor(Color(0x8B4000FF));              // zmienia kolor po najechaniu myszk¹
+			if (menuStart.getGlobalBounds().contains(mousePos)) menuStart.setFillColor(Color(0x8B4000FF));
 			else menuStart.setFillColor(Color(0xFFA500FF));
 
-			if (menuSettings.getGlobalBounds().contains(mousePos)) menuSettings.setFillColor(Color(0x8B4000FF));        //*
-			else menuSettings.setFillColor(Color(0xFFA500FF));                                                           //*            
+			if (menuSettings.getGlobalBounds().contains(mousePos)) menuSettings.setFillColor(Color(0x8B4000FF));
+			else menuSettings.setFillColor(Color(0xFFA500FF));
 
 			if (menuExit.getGlobalBounds().contains(mousePos)) menuExit.setFillColor(Color(0x8B4000FF));
 			else menuExit.setFillColor(Color(0xFFA500FF));
-			//
+
 			window.draw(menuBgSprite);
 			window.draw(menuTitle);
 			window.draw(menuStart);
@@ -2093,76 +1960,60 @@ int main() {
 			window.draw(menuExit);
 			window.display();
 		}
-		// ----------------------------
 
-		// Jeœli okno zosta³o zamkniête w menu, nie idŸ dalej
 		if (!window.isOpen()) return 0;
 
-
-
-		// --- ZMIENNE ROZGRYWKI ---
 		bool gameStarted = false;
 		bool isPaused = false;
 		bool isLevelUp = false;
 		bool isGameOver = false;
-		bool bossSpawned = false; // Czy boss ju¿ siê pojawi³?
+		bool bossSpawned = false;
 
-		// UI BOSSA (Pasek zdrowia)
 		sf::RectangleShape bossBarBg(sf::Vector2f(800.f, 30.f));
-		bossBarBg.setFillColor(sf::Color(50, 0, 0)); // Ciemnoczerwone t³o
+		bossBarBg.setFillColor(sf::Color(50, 0, 0));
 		bossBarBg.setOutlineColor(sf::Color::White);
 		bossBarBg.setOutlineThickness(2.f);
-		bossBarBg.setOrigin(sf::Vector2f(400.f, 0.f)); // Punkt zaczepienia na œrodku
-		bossBarBg.setPosition(sf::Vector2f(windowWidth / 2.f, 100.f)); // Na górze ekranu
+		bossBarBg.setOrigin(sf::Vector2f(400.f, 0.f));
+		bossBarBg.setPosition(sf::Vector2f(windowWidth / 2.f, 100.f));
 
 		sf::RectangleShape bossBarFill(sf::Vector2f(800.f, 30.f));
-		bossBarFill.setFillColor(sf::Color::Red); // Jasnoczerwone ¿ycie
+		bossBarFill.setFillColor(sf::Color::Red);
 		bossBarFill.setPosition(sf::Vector2f((windowWidth / 2.f) - 400.f, 100.f));
 
 		sf::Text bossNameText(font);
 		bossNameText.setString("SAMOCHOD OCHRONY SPECJAL");
 		bossNameText.setCharacterSize(24);
 		bossNameText.setFillColor(sf::Color::White);
-		centerText(bossNameText, windowWidth / 2.f, 75.f); // Nad paskiem
+		centerText(bossNameText, windowWidth / 2.f, 75.f);
 
-
-		// --- GRACZ JAKO SPRITE (ZMIANA) ---
 		sf::Texture idleTexture, walkTexture, runTexture, jumpTexture, fallTexture, hurtTexture, deathTexture, runToIdleTexture, turnWalkTexture, turnRunTexture;
 
-		// Wczytujemy wszystkie 3 pliki
-		if (!idleTexture.loadFromFile("animacje/idle.png")) return -1;                                                       //
-		if (!walkTexture.loadFromFile("animacje/walk.png")) return -1;                                                       //
-		if (!runTexture.loadFromFile("animacje/run.png")) return -1;                                                         //
-		if (!jumpTexture.loadFromFile("animacje/jump.png")) return -1;                                                       //
-		if (!fallTexture.loadFromFile("animacje/fall.png")) return -1;                                                       //  wczytywanie animacji postaci
-		if (!hurtTexture.loadFromFile("animacje/hurt.png")) return -1;                                                       //
-		if (!deathTexture.loadFromFile("animacje/death.png")) return -1;                                                     //
-		if (!runToIdleTexture.loadFromFile("animacje/run_to_idle.png")) return -1;                                           //
-		if (!turnWalkTexture.loadFromFile("animacje/turn_walk.png")) return -1;                                              //
-		if (!turnRunTexture.loadFromFile("animacje/turn_run.png")) return -1;                                                //
+		if (!idleTexture.loadFromFile("animacje/idle.png")) return -1;
+		if (!walkTexture.loadFromFile("animacje/walk.png")) return -1;
+		if (!runTexture.loadFromFile("animacje/run.png")) return -1;
+		if (!jumpTexture.loadFromFile("animacje/jump.png")) return -1;
+		if (!fallTexture.loadFromFile("animacje/fall.png")) return -1;
+		if (!hurtTexture.loadFromFile("animacje/hurt.png")) return -1;
+		if (!deathTexture.loadFromFile("animacje/death.png")) return -1;
+		if (!runToIdleTexture.loadFromFile("animacje/run_to_idle.png")) return -1;
+		if (!turnWalkTexture.loadFromFile("animacje/turn_walk.png")) return -1;
+		if (!turnRunTexture.loadFromFile("animacje/turn_run.png")) return -1;
 
-		sf::Sprite player(idleTexture); // Startujemy z idle
+		sf::Sprite player(idleTexture);
 
-		// POPRAWKA: U¿ywamy standardowego konstruktora IntRect (nawiasy okr¹g³e)
 		player.setTextureRect(sf::IntRect({ 0, 0 }, { 128, 128 }));
 
-		// POPRAWKA: Podajemy po prostu dwie liczby (x, y) zamiast tworzyæ obiekt sf::Vector2f
 		player.setOrigin(sf::Vector2f(64.f, 64.f));
 		player.setScale(sf::Vector2f(2.1f, 2.1f));
 
-		// Pozycja startowa (taka sama jak wczeœniej)
-		sf::Vector2f startPos = { mapWidth / 2.f, windowHeight - 100.f };
+		sf::Vector2f startPos = { mapWidth / 2.f, windowHeight - 99.f };
 		player.setPosition(startPos);
 
-		// --- HITBOX FIZYCZNY ---
-		// To jest "prawdziwe cia³o" gracza (ma³e kó³ko)
-		sf::CircleShape hitbox(15.f); // Promieñ 15 (œrednica 30) - ma³y hitbox
-		hitbox.setFillColor(sf::Color::Blue); // Kolor bez znaczenia, bo i tak nie bêdziemy go rysowaæ                          //rozmiar hitboxa
-		hitbox.setOrigin(sf::Vector2f(15.f, 15.f)); // Œrodek kó³ka                                                             
+		sf::CircleShape hitbox(15.f);
+		hitbox.setFillColor(sf::Color::Blue);
+		hitbox.setOrigin(sf::Vector2f(15.f, 15.f));
 		hitbox.setPosition(startPos);
-		// -------------------------------
 
-		// Zmienne do animacji
 		int currentAnimFrame = 0;
 		float animTimer = 0.0f;
 		float frameDuration = 0.1f;
@@ -2170,16 +2021,13 @@ int main() {
 		bool isDying = false;
 		bool isBraking = false;
 		bool isTurning = false;
-		// ----------------------------------
 
-		// Zmienne dynamiczne
 		float currentHp = 10;
 		int facingDir = 1;
 		PlayerStats pStats;
 
-		// EKWIPUNEK
-		std::vector<ActiveWeapon> weaponInventory;          // max 3 broñ
-		std::vector<ActivePassive> passiveInventory;        // max 3 przedmioty
+		std::vector<ActiveWeapon> weaponInventory;
+		std::vector<ActivePassive> passiveInventory;
 
 		int level = 1;
 		int exp = 0;
@@ -2210,10 +2058,8 @@ int main() {
 
 		int nextEnemyId = 0;
 
-
-		// --- PÊTLA WYBORU BRONI (POPRAWIONA) ---
 		while (window.isOpen() && !gameStarted) {
-			sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window); // Update pozycji myszki
+			sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
 
 			while (const std::optional event = window.pollEvent()) {
 				if (event->is<sf::Event::Closed>()) window.close();
@@ -2221,20 +2067,18 @@ int main() {
 					if (key->scancode == sf::Keyboard::Scancode::F11) {
 						isFullscreen = !isFullscreen;
 						window.close();
-						if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "AGH survival", sf::Style::Default, sf::State::Fullscreen);        // nazwa na pasku zadañ
-						else window.create(sf::VideoMode({ windowWidth, windowHeight }), "AGH survival", sf::Style::Default, sf::State::Windowed);          //
+						if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "AGH survival", sf::Style::Default, sf::State::Fullscreen);
+						else window.create(sf::VideoMode({ windowWidth, windowHeight }), "AGH survival", sf::Style::Default, sf::State::Windowed);
 						window.setFramerateLimit(140);
 						if (customCursor) {
 							window.setMouseCursor(customCursor.value());
 						}
 					}
 				}
-				// ZMIANA: Obs³uga klikniêcia jako ZDARZENIE wewn¹trz pêtli pollEvent
-				else if (const auto* mouseBtn = event->getIf<sf::Event::MouseButtonPressed>()) {                        //
-					if (mouseBtn->button == sf::Mouse::Button::Left) {                                                  //      Funkcja dla klikniêcia myszk¹ 
-						for (auto& btn : weaponButtons) {                                                               //
+				else if (const auto* mouseBtn = event->getIf<sf::Event::MouseButtonPressed>()) {
+					if (mouseBtn->button == sf::Mouse::Button::Left) {
+						for (auto& btn : weaponButtons) {
 							if (btn.shape.getGlobalBounds().contains(mousePos)) {
-								// Tutaj wybieramy broñ
 								weaponInventory.clear();
 								WeaponDef* targetDef = nullptr;
 								for (auto& dbW : weaponDB) if (dbW.id == btn.id) targetDef = &dbW;
@@ -2253,26 +2097,21 @@ int main() {
 				}
 			}
 
-			// --- RYSOWANIE EKRANU WYBORU BRONI (Z T£EM GRY) ---
 			window.clear(sf::Color(20, 20, 20));
 
-			// 1. Ustawienie kamery na gracza (¿eby by³o widaæ t³o)
 			sf::View view(sf::FloatRect({ 0.f, 0.f }, { (float)windowWidth, (float)windowHeight }));
 			float camX = std::clamp(player.getPosition().x, windowWidth / 2.f, mapWidth - windowWidth / 2.f);
 			view.setCenter({ camX, windowHeight / 2.f });
 			window.setView(view);
 
-			// 2. Rysowanie œwiata (T³o, Ziemia, Portale, Gracz)
 			window.draw(background);
 			window.draw(ground);
 			for (auto& p : portals) window.draw(p.sprite);
 			window.draw(player);
 
-			// 3. Powrót do kamery UI
 			window.setView(window.getDefaultView());
 
-			// 4. Rysowanie przyciemnienia i Menu
-			window.draw(overlay); // To daje efekt "pauzy"
+			window.draw(overlay);
 			window.draw(title);
 
 			for (auto& btn : weaponButtons) {
@@ -2290,7 +2129,6 @@ int main() {
 
 		if (!window.isOpen()) return 0;
 
-		// --- G£ÓWNA PÊTLA ---
 		while (window.isOpen() && gameStarted) {
 			float dt = dtClock.restart().asSeconds();
 			sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(window);
@@ -2317,12 +2155,10 @@ int main() {
 			}
 
 			if (isGameOver) {
-				// Logika przycisku RESTART (te¿ warto zmieniæ na Event w przysz³oœci, ale tu zadzia³a te¿ click hold)
 				if (restartButton.getGlobalBounds().contains(mousePos)) {
 					restartButton.setFillColor(sf::Color::Green);
 					if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
 
-						// --- PE£NY RESET GRY ---
 						gameStarted = false;
 						isGameOver = false;
 						inMainMenu = false;
@@ -2331,7 +2167,6 @@ int main() {
 						isBraking = false;
 						isTurning = false;
 
-						// 1. Reset postêpu
 						level = 1;
 						exp = 0;
 						nextExp = 50;
@@ -2339,7 +2174,6 @@ int main() {
 						killCount = 0;
 						magnetsCollected = 0;
 
-						// 2. Czyszczenie wektorów
 						enemies.clear();
 						projectiles.clear();
 						zones.clear();
@@ -2353,23 +2187,22 @@ int main() {
 						Ochrona.clear();
 						Egzamin.clear();
 
-						// 3. Reset statystyk i gracza
 						pStats = recalculateStats(passiveInventory);
 						currentHp = (float)pStats.maxHp;
 						player.setPosition(startPos);
 						hitbox.setPosition(startPos);
 
-						// 4. Reset zegarów
 						spawnClock.restart();
 						regenClock.restart();
 
-						// --- POWRÓT DO MENU WYBORU BRONI (ZMODYFIKOWANA PÊTLA) ---
+						gameOverTitle.setString("GAME OVER");
+						gameOverTitle.setFillColor(sf::Color::Red);
+						centerText(gameOverTitle, windowWidth / 2.f, windowHeight / 2.f - 100.f);
+
 						while (window.isOpen() && !gameStarted) {
 							sf::Vector2f mp = (sf::Vector2f)sf::Mouse::getPosition(window);
 							while (const std::optional event = window.pollEvent()) {
 								if (event->is<sf::Event::Closed>()) { window.close(); return 0; }
-
-								// Znowu u¿ywamy EVENT, ¿eby nie klika³o podwójnie
 								else if (const auto* mouseBtn = event->getIf<sf::Event::MouseButtonPressed>()) {
 									if (mouseBtn->button == sf::Mouse::Button::Left) {
 										for (auto& btn : weaponButtons) {
@@ -2386,24 +2219,20 @@ int main() {
 								}
 							}
 
-							// --- RYSOWANIE (IDENTYCZNE JAK NA STARCIE) ---
 							window.clear(sf::Color(20, 20, 20));
 
-							// Kamera na gracza
 							sf::View view(sf::FloatRect({ 0.f, 0.f }, { (float)windowWidth, (float)windowHeight }));
 							float camX = std::clamp(player.getPosition().x, windowWidth / 2.f, mapWidth - windowWidth / 2.f);
 							view.setCenter({ camX, windowHeight / 2.f });
 							window.setView(view);
 
-							// Œwiat
 							window.draw(background);
 							window.draw(ground);
 							for (auto& p : portals) window.draw(p.sprite);
 							window.draw(player);
 
-							// UI
 							window.setView(window.getDefaultView());
-							window.draw(overlay); // Przyciemnienie
+							window.draw(overlay);
 							window.draw(title);
 
 							for (auto& btn : weaponButtons) {
@@ -2420,8 +2249,6 @@ int main() {
 				else restartButton.setFillColor(sf::Color::White);
 			}
 			else if (isLevelUp) {
-				// LOGIKA WYBORU KARTY
-				// Tutaj click hold jest mniej groŸny, bo pauzuje grê, ale dla spójnoœci mo¿na te¿ u¿yæ eventów
 				for (size_t i = 0; i < upgradeCards.size(); ++i) {
 					if (upgradeCards[i].shape.getGlobalBounds().contains(mousePos)) {
 						upgradeCards[i].shape.setOutlineColor(sf::Color::Yellow);
@@ -2429,11 +2256,10 @@ int main() {
 							int idx = upgradeCards[i].index;
 							int type = upgradeCards[i].type;
 
-							if (type == 0) { // Broñ
+							if (type == 0) {
 								bool found = false;
 								for (auto& w : weaponInventory) {
 									if (w.def->id == weaponDB[idx].id) {
-										// Sprawdzamy czy nie przekraczamy max levela
 										if (w.level < w.def->levels.size()) {
 											w.level++;
 										}
@@ -2443,14 +2269,13 @@ int main() {
 								}
 								if (!found) weaponInventory.push_back({ &weaponDB[idx], 1, 0.f });
 							}
-							else { // Pasywka
+							else {
 								bool found = false;
 								for (auto& p : passiveInventory) {
 									if (p.def.id == passiveDB[idx].id) { p.level++; found = true; break; }
 								}
 								if (!found) passiveInventory.push_back({ passiveDB[idx], 1 });
 
-								// Przelicz statystyki po zdobyciu pasywki
 								float hpPercentage = currentHp / (float)pStats.maxHp;
 								pStats = recalculateStats(passiveInventory);
 								currentHp = hpPercentage * (float)pStats.maxHp;
@@ -2473,31 +2298,26 @@ int main() {
 				statsStr += "Regeneracja: " + std::to_string(pStats.regen).substr(0, 3) + "/s\n";
 				statsStr += "Pancerz: " + std::to_string(pStats.armor) + "\n\n";
 
-				// Mno¿ymy razy 100, ¿eby pokazaæ procenty (np. 1.1 -> 110%)
 				statsStr += "Sila: " + std::to_string((int)(pStats.might * 100)) + "%\n";
 				statsStr += "Obszar): " + std::to_string((int)(pStats.area * 100)) + "%\n";
 				statsStr += "Szybkosc pocisku: " + std::to_string((int)(pStats.speed * 100)) + "%\n";
 				statsStr += "Czas trwania: " + std::to_string((int)(pStats.duration * 100)) + "%\n";
 
-				// Cooldown im mniejszy tym lepiej, wiêc pokazujemy np. 90% (czyli -10%)
 				statsStr += "Cooldown: " + std::to_string((int)(pStats.cooldown * 100)) + "%\n";
 
 				statsStr += "Ilosc: +" + std::to_string(pStats.amount) + "\n";
 				statsStr += "Zasieg: " + std::to_string((int)pStats.magnet) + "\n";
 
 				pauseStatsText.setString(statsStr);
-				// --- 1. OBS£UGA RESTARTU ---
 				if (pauseRestart.getGlobalBounds().contains(mousePos)) {
 					pauseRestart.setFillColor(sf::Color::Red);
 
 					if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
 						clickSound.play();
-						// Logika Restartu:
 						isPaused = false;
-						gameStarted = false; // Przerywamy pêtlê gry, wracamy do pêtli "Matki"
-						inMainMenu = false;  // Ustawiamy false, ¿eby pêtla Matka pominê³a Menu i wesz³a do Wyboru Broni
+						gameStarted = false;
+						inMainMenu = false;
 
-						// Reset zegarów i muzyki
 						spawnClock.restart();
 						regenClock.restart();
 						magnetsCollected = 0;
@@ -2509,16 +2329,14 @@ int main() {
 					pauseRestart.setFillColor(sf::Color::White);
 				}
 
-				// --- 2. OBS£UGA MENU G£ÓWNEGO ---
 				if (pauseMainMenu.getGlobalBounds().contains(mousePos)) {
 					pauseMainMenu.setFillColor(sf::Color::Red);
 
 					if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
 						clickSound.play();
-						// Logika Wyjœcia do Menu:
 						isPaused = false;
-						gameStarted = false; // Przerywamy pêtlê gry
-						inMainMenu = true;   // Ustawiamy true, ¿eby pêtla Matka wesz³a do Menu G³ównego
+						gameStarted = false;
+						inMainMenu = true;
 
 						bgMusic.stop();
 					}
@@ -2529,37 +2347,30 @@ int main() {
 			}
 			else if (!isPaused) {
 				gameTime += dt;
-				// KONIEC GRY PO 6 MINUTACH ---
 				if (gameTime >= 300.0f) {
 					isGameOver = true;
 
-					// Zatrzymujemy muzykê i grê
 					bgMusic.stop();
-					levelUpSound.play(); // Mo¿esz u¿yæ levelUpSound jako fanfary zwyciêstwa
+					levelUpSound.play();
 
-					// Zmieniamy napis z "GAME OVER" na "ZWYCIÊSTWO"
 					gameOverTitle.setString("ZWYCIESTWO!");
 					gameOverTitle.setFillColor(sf::Color::Green);
 
-					// Centrujemy nowy napis (bo ma inn¹ d³ugoœæ ni¿ Game Over)
 					centerText(gameOverTitle, windowWidth / 2.f, windowHeight / 2.f - 100.f);
 				}
-				// ------------------------------------------
 
-				// --- REGENERACJA HP ---
 				if (pStats.regen > 0.f) {
-					if (regenClock.getElapsedTime().asSeconds() >= 1.0f) {// Sprawdzamy, czy minê³a 1 sekunda
+					if (regenClock.getElapsedTime().asSeconds() >= 1.0f) {
 						if (currentHp < pStats.maxHp) {
 							currentHp += pStats.regen;
-							if (currentHp > pStats.maxHp) {// Upewniamy siê, ¿e nie przekroczymy Max HP
+							if (currentHp > pStats.maxHp) {
 								currentHp = (float)pStats.maxHp;
 							}
 						}
-						regenClock.restart(); // Resetujemy zegar regeneracji
+						regenClock.restart();
 					}
 				}
 
-				// --- AKTUALIZACJA ANIMACJI (PRIORYTETY: ŒMIERÆ > OBRA¯ENIA > SKOK > OBRÓT > HAMOWANIE > RUCH) ---
 				animTimer += dt;
 				float speedAbs = std::abs(velocity.x);
 				frameDuration = 0.1f;
@@ -2568,7 +2379,6 @@ int main() {
 				int maxFrames = 10;
 				bool loopAnimation = true;
 
-				// 0a. DETEKCJA HAMOWANIA
 				if (onGround && !isBraking && !isTurning && !isHurt && !isDying && speedAbs < 10.f && &player.getTexture() == &runTexture) {
 					isBraking = true;
 				}
@@ -2576,7 +2386,6 @@ int main() {
 					isBraking = false;
 				}
 
-				// 1. WYBÓR STANU
 				if (isDying) {
 					nextTexture = &deathTexture; maxFrames = 23; loopAnimation = false;
 				}
@@ -2588,16 +2397,13 @@ int main() {
 					else { nextTexture = &fallTexture; maxFrames = 4; }
 				}
 				else {
-					// ZIEMIA
 					if (isTurning) {
-						// Wybór: obrót z biegu czy chodu?
-						// Sprawdzamy czy prêdkoœæ by³a du¿a (sprint)
 						if (speedAbs > pStats.moveSpeed * 1.1f) nextTexture = &turnRunTexture;
 						else nextTexture = &turnWalkTexture;
 
-						maxFrames = 4; // Obrót ma 4 klatki
+						maxFrames = 4;
 						loopAnimation = false;
-						frameDuration = 0.04f; // Obrót jest doœæ szybki
+						frameDuration = 0.04f;
 					}
 					else if (isBraking) {
 						nextTexture = &runToIdleTexture; maxFrames = 7; loopAnimation = false;
@@ -2613,7 +2419,6 @@ int main() {
 					}
 				}
 
-				// 2. ZMIANA TEKSTURY
 				if (&player.getTexture() != nextTexture) {
 					player.setTexture(*nextTexture);
 					currentAnimFrame = 0;
@@ -2621,7 +2426,6 @@ int main() {
 					player.setTextureRect(sf::IntRect({ 0, 0 }, { 128, 128 }));
 				}
 
-				// 3. PRZEWIJANIE KLATEK
 				if (animTimer >= frameDuration) {
 					animTimer = 0.f;
 					currentAnimFrame++;
@@ -2631,7 +2435,6 @@ int main() {
 							currentAnimFrame = 0;
 						}
 						else {
-							// KONIEC ANIMACJI JEDNORAZOWYCH
 							if (isDying) {
 								currentAnimFrame = maxFrames - 1; isGameOver = true;
 							}
@@ -2642,9 +2445,8 @@ int main() {
 								isBraking = false; currentAnimFrame = 0;
 							}
 							else if (isTurning) {
-								// WA¯NE: Koniec obrotu -> odwracamy postaæ
 								isTurning = false;
-								facingDir = -facingDir; // Zmieñ kierunek na przeciwny
+								facingDir = -facingDir;
 								currentAnimFrame = 0;
 							}
 						}
@@ -2652,17 +2454,12 @@ int main() {
 					player.setTextureRect(sf::IntRect({ currentAnimFrame * 128, 0 }, { 128, 128 }));
 				}
 
-				// 4. OBRACANIE
 				if (!isDying) {
-					// Jeœli trwa animacja obrotu, NIE odwracamy jeszcze skali (grafika obrotu robi to wizualnie)
-					// Odwracamy dopiero po zakoñczeniu (gdy zmieni siê facingDir w bloku wy¿ej)
 					if (facingDir == -1) player.setScale(sf::Vector2f(-2.0f, 2.0f));
 					else player.setScale(sf::Vector2f(2.0f, 2.0f));
 				}
-				// ----------------------------------------------------
 
-				// 1. RUCH
-				velocity.x = 0.f; // Domyœlnie zerujemy prêdkoœæ
+				velocity.x = 0.f;
 
 				if (!isDying) {
 					float currentSpeed = pStats.moveSpeed;
@@ -2708,12 +2505,10 @@ int main() {
 					}
 				}
 
-				// Grawitacja dzia³a zawsze (nawet jak umiera, musi spaœæ na ziemiê)
 				velocity.y += baseGravity * dt;
 
 				hitbox.move(velocity * dt);
 
-				// Ograniczenia mapy
 				if (hitbox.getPosition().x < 30) hitbox.setPosition({ 30, hitbox.getPosition().y });
 				if (hitbox.getPosition().x > mapWidth - 30) hitbox.setPosition({ mapWidth - 30, hitbox.getPosition().y });
 
@@ -2726,104 +2521,85 @@ int main() {
 
 				player.setPosition(hitbox.getPosition());
 
-				// --- SPAWNOWANIE PRZECIWNIKÓW  ---
 				float spawnDelay = 1.0f - (gameTime * 0.0039f);
 				if (spawnDelay < 0.06f) spawnDelay = 0.06f;
 
 				if (spawnClock.getElapsedTime().asSeconds() > spawnDelay) {
-						// --- KOD BOSSA ---
-						if (!bossSpawned && gameTime >= 210.f) {// 3.5minuty
-							Enemy boss;
-							boss.id = nextEnemyId++;
-							boss.hp = 3000.0f;
-							boss.maxHp = 3000.0f;
-							boss.isBoss = true;
+					if (!bossSpawned && gameTime >= 270.f) {
+						Enemy boss;
+						boss.id = nextEnemyId++;
+						boss.hp = 3000.0f;
+						boss.maxHp = 3000.0f;
+						boss.isBoss = true;
 
-							// Wygl¹d bossa (Du¿y i inny kolor)
-							boss.shape.setRadius(100.f);
-							boss.shape.setFillColor(sf::Color::Transparent);
-							boss.shape.setOrigin(sf::Vector2f(100.f, 100.f));
+						boss.shape.setRadius(100.f);
+						boss.shape.setFillColor(sf::Color::Transparent);
+						boss.shape.setOrigin(sf::Vector2f(100.f, 100.f));
 
-							float bossSpawnX = 0.f;
+						float bossSpawnX = 0.f;
 
-							// Losujemy portal: 0 = Lewy, 1 = Prawy
-							if (rand() % 2 == 0) {
-								bossSpawnX = 80.f; // Pozycja lewego portalu
-							}
-							else {
-								bossSpawnX = mapWidth - 80.f; // Pozycja prawego portalu
-							}
-
-							// Wysokoœæ (Y)
-							// Ustawiamy go na ziemi. Odejmujemy 80, ¿eby du¿y boss nie zapada³ siê w pod³ogê.
-							float bossSpawnY = ground.getPosition().y - 80.f;
-
-							boss.shape.setPosition(sf::Vector2f(bossSpawnX, bossSpawnY));
-
-							// --- DODAJEMY ANIMACJÊ ---
-							Boss.emplace_back(bossTexture, boss.shape.getPosition());
-							Boss.back().targetId = boss.id;
-							// -------------------------
-
-							enemies.push_back(boss);
-							bossSpawned = true; // Zablokuj ponowne spawnowanie
-
-							// Nie spawnuj zwyk³ego wroga w tej samej klatce co bossa
-							spawnClock.restart();
+						if (rand() % 2 == 0) {
+							bossSpawnX = 80.f;
 						}
-					// ------------------------
+						else {
+							bossSpawnX = mapWidth - 80.f;
+						}
+
+						float bossSpawnY = ground.getPosition().y - 80.f;
+
+						boss.shape.setPosition(sf::Vector2f(bossSpawnX, bossSpawnY));
+
+						Boss.emplace_back(bossTexture, boss.shape.getPosition());
+						Boss.back().targetId = boss.id;
+
+						enemies.push_back(boss);
+						bossSpawned = true;
+
+						spawnClock.restart();
+					}
 
 					Enemy e;
 					e.id = nextEnemyId++;
 
-					// 1. WYBÓR TYPU PRZECIWNIKA (Zale¿nie od czasu)
-					int enemyType = 0; // 0 = S³aby (Domyœlny)
-					int randVal = rand() % 100; // Losowa liczba 0-99
+					int enemyType = 0;
+					int randVal = rand() % 100;
 
-					if (gameTime >= 240.f) {  // Po 4 minutach
-						// 0% S³abych
-						// 60% Œrednich (Ochrona)
-						// 40% Mocnych (Egzamin)
+					if (gameTime >= 300.f) {
 						if (randVal < 50) {
-							enemyType = 1; // Œredni
+							enemyType = 1;
 						}
 						else {
-							enemyType = 2; // Mocny
+							enemyType = 2;
 						}
 					}
-					else if (gameTime >= 120.f) { // Po 2 minutach
-						// 50% S³aby, 30% Œredni, 20% Silny
+					else if (gameTime >= 180.f) {
 						if (randVal < 50) enemyType = 0;
 						else if (randVal < 80) enemyType = 1;
 						else enemyType = 2;
 					}
-					else if (gameTime >= 30.f) { // Po 30 sekundach
-						// 60% S³aby, 40% Œredni
+					else if (gameTime >= 90.f) {
 						if (randVal < 60) enemyType = 0;
 						else enemyType = 1;
 					}
 					else {
-						// Tylko s³aby
 						enemyType = 0;
 					}
 
-					// 2. USTAWIENIE STATYSTYK
-					if (enemyType == 0) { // Podstawowy
+					if (enemyType == 0) {
 						e.hp = 1.0f; e.maxHp = 1.0f;
 						e.shape.setRadius(25.f);
 						e.shape.setFillColor(sf::Color::Transparent);
 						Szczur.emplace_back(szczurTexture, e.shape.getPosition());
 						Szczur.back().targetId = e.id;
 					}
-					else if (enemyType == 1) { // Œredni
+					else if (enemyType == 1) {
 						e.hp = 25.0f; e.maxHp = 25.0f;
 						e.shape.setRadius(30.f);
 						e.shape.setFillColor(sf::Color::Transparent);
 						Ochrona.emplace_back(ochronaTexture, e.shape.getPosition());
 						Ochrona.back().targetId = e.id;
-						// Opcjonalnie wolniejszy? (logika prêdkoœci jest ni¿ej w pêtli ruchu)
 					}
-					else if (enemyType == 2) { // Twardy
+					else if (enemyType == 2) {
 						e.hp = 60.0f; e.maxHp = 60.0f;
 						e.shape.setRadius(35.f);
 						e.shape.setFillColor(sf::Color::Transparent);
@@ -2833,13 +2609,12 @@ int main() {
 
 					e.shape.setOrigin(sf::Vector2f(e.shape.getRadius(), e.shape.getRadius()));
 
-					// 3. BEZPIECZNA POZYCJA spawn tylko z lewej i prawej strony ekranu
 					float spawnX = 0.f;
-					if (rand() % 2 == 0) {// Losujemy stronê: 0 = Lewa, 1 = Prawa
-						spawnX = 80.f; // TUTAJ DOPASOWAC DO MIEJSCA W KTORYM JEST PORTAL
+					if (rand() % 2 == 0) {
+						spawnX = 80.f;
 					}
 					else {
-						spawnX = mapWidth - 80; // TUTAJ DOPASOWAC DO MIEJSCA W KTORYM JEST PORTAL
+						spawnX = mapWidth - 80;
 					}
 
 					float spawnY = windowHeight - 100.f;
@@ -2849,18 +2624,12 @@ int main() {
 					enemies.push_back(e);
 					spawnClock.restart();
 				}
-				// 3. BRONIE (STRZELANIE)
 				for (auto& w : weaponInventory) {
 					w.cooldownTimer -= dt;
 
-					// 1. POBIERZ STATYSTYKI DLA OBECNEGO POZIOMU
-					// w.level - 1, bo wektor liczymy od 0 (lvl 1 to indeks 0)
 					const WeaponLevelStats& stats = w.def->levels[w.level - 1];
 
-					// Czosnek
 					if (w.def->id == GARLIC) {
-						// Obliczamy aktualny promieñ w ka¿dej klatce
-						// 100.f to baza, stats.area to bonus z poziomu broni, pStats.area to pasywka (Candle)
 						float currentRadius = 100.f * stats.area * pStats.area;
 
 						bool zoneExists = false;
@@ -2868,19 +2637,15 @@ int main() {
 							if (z.wId == GARLIC) {
 								zoneExists = true;
 
-								// AKTUALIZACJA ISTNIEJ¥CEJ STREFY
-								// Dziêki temu po wziêciu pasywki strefa uroœnie "na ¿ywo"
 								if (z.shape.getRadius() != currentRadius) {
 									z.shape.setRadius(currentRadius);
 									z.shape.setOrigin({ currentRadius, currentRadius });
 								}
 
-								// Aktualizujemy te¿ obra¿enia (np. po wziêciu Szpinaku)
 								z.damage = stats.damage * pStats.might;
 							}
 						}
 
-						// Jeœli strefa nie istnieje (np. pocz¹tek gry), stwórz j¹
 						if (!zoneExists) {
 							DamageZone z;
 							z.wId = GARLIC;
@@ -2892,16 +2657,13 @@ int main() {
 							z.shape.setOrigin({ currentRadius, currentRadius });
 							zones.push_back(z);
 						}
-						continue; // Przechodzimy do nastêpnej broni, bo Czosnek nie strzela pociskami
+						continue;
 					}
 
 					if (w.cooldownTimer <= 0.f) {
-						// U¿ywamy stats.cooldown
 						w.cooldownTimer = stats.cooldown * pStats.cooldown;
 
 						float sizeMult = stats.area * pStats.area;
-						// Logika Amount (Baza z poziomu + Bonus gracza)
-						// Np. Whip lvl 3 ma w bazie amount=2.
 						int amount = stats.amount + pStats.amount;
 						if (w.def->id == WHIP) {
 							szalik.emplace_back(szalikTexture, player.getPosition(), facingDir, 1, sizeMult);
@@ -2916,13 +2678,11 @@ int main() {
 							Projectile p;
 							p.wId = w.def->id;
 
-							// --- U¯YWAMY STATYSTYK Z POZIOMU ---
 							p.damage = stats.damage * pStats.might;
 							p.maxLifeTime = stats.duration * pStats.duration;
 							float speed = stats.speed * pStats.speed;
 							p.baseSpeed = speed;
 							p.pierceLeft = stats.pierce;
-							// -----------------------------------
 
 
 							float minDist = 10000.f;
@@ -2934,34 +2694,27 @@ int main() {
 							p.shape.setPosition(player.getPosition());
 
 							float pitchVar = 0.9f + (float)(rand() % 20) / 100.f;
-							// --- KONFIGURACJA KSZTA£TU (WHIP) ---
 							if (w.def->id == WHIP) {
 								whipSound.setPitch(pitchVar);
 								whipSound.play();
 
 								p.boxShape.setSize({ 100.f * sizeMult, 30.f * sizeMult });
 
-								// --- 2. ZMIEÑ TE DWIE LINIKI: ---
-								p.boxShape.setTexture(nullptr);         // Usuwamy teksturê z hitboxa
-								p.boxShape.setFillColor(sf::Color::Transparent); // Robimy go niewidzialnym
-								// --------------------------------
+								p.boxShape.setTexture(nullptr);
+								p.boxShape.setFillColor(sf::Color::Transparent);
 
 								p.boxShape.setOrigin({ 0.f, 20.f * sizeMult });
 								p.startPos = player.getPosition();
 								p.boxShape.setPosition(player.getPosition());
 
-								// Ustalmy kierunek hitboxa (1 = prawo, -1 = lewo)
 								float scaleDir = (float)facingDir;
 
-								// Jeœli to parzysty indeks (i=1, 3...), to jest to "tylny" atak, wiêc odwracamy kierunek
 								if (i % 2 != 0) {
 									scaleDir = -scaleDir;
 								}
 
-								// Teraz ustawiamy skalê: 1.5 szerokoœci w odpowiedni¹ stronê
 								p.boxShape.setScale({ 1.5f * scaleDir, 1.5f });
 							}
-							// --- LIGHTNING ---
 							else if (w.def->id == LIGHTNING) {
 								if (enemies.empty()) continue;
 
@@ -2978,20 +2731,16 @@ int main() {
 
 								int idx = validTargets[rand() % validTargets.size()];
 
-								// ODTWARZANIE DWIÊKU PIORUNA
 								lightningSound.setPitch(pitchVar);
 								lightningSound.play();
 
-								//  TWORZENIE ANIMOWANEGO PIORUNA
 								lightnings.emplace_back(piorunTexture, enemies[idx].shape.getPosition());
 								p.boxShape.setSize({ 40.f, 100.f });
 								p.boxShape.setOrigin({ 20.f, 100.f });
 								p.boxShape.setPosition(enemies[idx].shape.getPosition());
 
-								// Ustawiamy czas ¿ycia hitboxa
 								p.maxLifeTime = 0.2f;
 							}
-							// --- INNE BRONIE --- 
 							else if (w.def->id == MAGIC_WAND) {
 								beerSound.setPitch(pitchVar);
 								beerSound.play();
@@ -3005,8 +2754,6 @@ int main() {
 								sf::Vector2f dir = normalize(target - player.getPosition());
 								p.velocity = dir * speed;
 
-								// LOGIKA WÊ¯YKA: Przesuwamy start do ty³u dla kolejnych pocisków
-								// i=0 (0px), i=1 (-20px), i=2 (-40px) wzd³u¿ wektora lotu
 								p.shape.setPosition(player.getPosition() - (dir * ((float)i * 25.f)));
 								p.shape.rotate(sf::degrees(360.f * dt));
 							}
@@ -3017,11 +2764,9 @@ int main() {
 								sf::Vector2f dir((float)facingDir, 0.f);
 								p.velocity = normalize(dir) * speed;
 
-								// LOGIKA WÊ¯YKA (jeden za drugim)
 								p.shape.setPosition(player.getPosition() - (dir * ((float)i * 30.f)));
-								p.shape.setTexture(&olowekTexture);                      // przypisz tekstury
+								p.shape.setTexture(&olowekTexture);
 
-								// Obracanie w zale¿noœci od kierunku
 								if (facingDir == -1) p.shape.setScale({ -2.f, 2.f });
 								else p.shape.setScale({ 2.f, 2.f });
 							}
@@ -3034,7 +2779,6 @@ int main() {
 
 								float xDir = (float)facingDir * fixedThrowPowerX + (i * 100.f * facingDir);
 
-								// Ustawiamy wektor startowy "na sztywno"
 								p.velocity = sf::Vector2f(xDir, -fixedThrowPowerY - (i * 50.f));
 								p.baseSpeed = speed / 600.f;
 								p.shape.setTexture(&krzesloTexture);
@@ -3042,7 +2786,6 @@ int main() {
 
 							}
 							else if (w.def->id == BOOMERANG) {
-								// DŸwiêk tylko dla pierwszego banana (¿eby nie og³uszyæ)
 								if (i == 0) {
 									float pVar = 0.9f + (float)(rand() % 20) / 100.f;
 									bananaSound.setPitch(pVar);
@@ -3051,9 +2794,8 @@ int main() {
 
 								p.startPos = player.getPosition();
 
-								// 1. Szukamy najbli¿szego celu
 								float minDist = 10000.f;
-								sf::Vector2f target = player.getPosition() + sf::Vector2f(100 * facingDir, 0); // Domyœlnie prosto
+								sf::Vector2f target = player.getPosition() + sf::Vector2f(100 * facingDir, 0);
 
 								for (auto& e : enemies) {
 									float d = vectorLength(e.shape.getPosition() - player.getPosition());
@@ -3063,24 +2805,17 @@ int main() {
 									}
 								}
 
-								// 2. Obliczamy kierunek
 								sf::Vector2f dir = normalize(target - player.getPosition());
 
-								// Ustawiamy prêdkoœæ
 								p.velocity = dir * speed;
 
-								// 3. EFEKT "JEDEN ZA DRUGIM"
-								// Cofamy pozycjê startow¹ kolejnych bananów.
-								// 40.f to odstêp w pikselach miêdzy bananami.
 								p.shape.setPosition(player.getPosition() - (dir * ((float)i * 45.f)));
 
 								p.shape.setTexture(&bananTexture);
 								p.shape.setScale({ 2.0f, 2.0f });
-								}
+							}
 							else if (w.def->id == BIBLE) {
-								// LOGIKA BIBLII: Rozk³adamy równo po kole
-								// i=0 (0st), i=1 (180st) dla amount=2
-								float angleStep = 360.f / (float)amount; // Np. 360/2 = 180
+								float angleStep = 360.f / (float)amount;
 								p.angleOffset = (float)i * angleStep;
 								p.shape.setTexture(&ksiazkaTexture);
 								p.shape.setScale({ 2.0f, 2.0f });
@@ -3108,7 +2843,6 @@ int main() {
 					}
 				}
 
-				// 4. AKTUALIZACJA POCISKÓW
 				for (size_t i = 0; i < projectiles.size();) {
 					Projectile& p = projectiles[i];
 					p.lifeTime += dt;
@@ -3132,18 +2866,12 @@ int main() {
 
 					if (!dead) {
 						float pitchVar = 0.9f + (float)(rand() % 20) / 100.f;
-						// Logika ruchu (bicz, axe, bible...)
 						if (p.wId == AXE) {
-							// "AXE TIME": Mno¿ymy czas przez baseSpeed.
-							// Jeœli baseSpeed = 2.0, to w jednej klatce gry (dt)
-							// topór wykona ruch, jakby minê³y dwie klatki.
 							float axeDt = dt * p.baseSpeed;
 
-							// U¿ywamy axeDt zamiast zwyk³ego dt do grawitacji i ruchu
-							p.velocity.y += 2500.f * axeDt; // Grawitacja (taka sama jak baseGravity)
+							p.velocity.y += 2500.f * axeDt;
 							p.shape.move(p.velocity * axeDt);
 
-							// Obracanie
 							p.shape.rotate(sf::degrees(360.f * axeDt));
 						}
 						else if (p.wId == BOOMERANG) {
@@ -3158,12 +2886,9 @@ int main() {
 						else if (p.wId == BIBLE) {
 							float currentSpeed = p.baseSpeed;
 							float dist = 120.f * pStats.area;
-							// Obliczamy k¹t w stopniach: Czas gry + Przesuniêcie dla tego konkretnego pocisku
-							float baseAngle = gameTime * currentSpeed * 57.29f; // * 57.29 zamienia radiany na stopnie (opcjonalne, zale¿nie jak liczysz speed)
-							// Proœciej:
+							float baseAngle = gameTime * currentSpeed * 57.29f;
 							float finalAngleDegrees = (gameTime * 200.f) + p.angleOffset;
 
-							// Zamiana na radiany do sin/cos
 							float rad = finalAngleDegrees * 3.14159f / 180.f;
 
 							p.shape.setPosition(player.getPosition() + sf::Vector2f(std::cos(rad) * dist, std::sin(rad) * dist));
@@ -3171,7 +2896,6 @@ int main() {
 						else if (p.wId == WHIP) { p.boxShape.setPosition(player.getPosition()); }
 						else { p.shape.move(p.velocity * dt); }
 
-						// Kolizje
 						sf::FloatRect pBounds;
 
 						if (p.wId == WHIP || p.wId == LIGHTNING) {
@@ -3182,11 +2906,10 @@ int main() {
 						}
 
 						for (auto& en : enemies) {
-							bool hitAlready = false; 
+							bool hitAlready = false;
 							for (int id : p.hitEnemies) if (id == en.id) hitAlready = true;
 							if (hitAlready) continue;
 
-							// KOLIZJA POCISKU Z WROGIEM
 							if (pBounds.findIntersection(en.shape.getGlobalBounds())) {
 								bool hitAlready = false;
 								for (int id : p.hitEnemies) if (id == en.id) hitAlready = true;
@@ -3200,10 +2923,8 @@ int main() {
 									bibleHitSound.play();
 								}
 
-								// 1. ZADAJ OBRA¯ENIA (bezpoœrednie trafienie fiolk¹)
 								en.hp -= p.damage;
 
-								// 2. SPRAWD CZY WRÓG ¯YJE
 								if (en.hp <= 0.f) {
 									killCount++;
 
@@ -3218,32 +2939,27 @@ int main() {
 									float randX = (float)(rand() % 200 - 100);
 									orb.velocity = { randX, -400.f };
 
-									// --- TUTAJ USTALAMY WARTOŒÆ XP ---
 									if (en.isBoss) {
 										orb.value = 10000;
 										orb.sprite.setColor(sf::Color::Red);
 										bossDeathSound.play();
 									}
 									else {
-										orb.value = 10; // Zwyk³y szczur
+										orb.value = 10;
 									}
-									// ---------------------------------
-									if (rand() % 500 == 0) {                                                                                  //szansa na magnes 1 do 500
+									if (rand() % 500 == 0) {
 
 										ExpOrb mag(magnesTexture);
 										mag.isMagnet = true;
 
-										// Resetujemy kolor na bia³y
 										mag.sprite.setColor(sf::Color::White);
 
-										// Ustawiamy wymiary (bezpiecznie)
 										sf::Vector2u texSize = magnesTexture.getSize();
 										if (texSize.x > 0 && texSize.y > 0) {
 											mag.sprite.setTextureRect(sf::IntRect({ 0, 0 }, { (int)texSize.x, (int)texSize.y }));
 											mag.sprite.setOrigin(sf::Vector2f(texSize.x / 2.f, texSize.y / 2.f));
 										}
 										else {
-											// Zabezpieczenie gdyby tekstura jednak nie zadzia³a³a
 											mag.sprite.setTexture(expOrbTexture);
 											mag.sprite.setTextureRect(sf::IntRect({ 0, 0 }, { 16, 16 }));
 											mag.sprite.setOrigin({ 8.f, 8.f });
@@ -3252,7 +2968,6 @@ int main() {
 
 										mag.sprite.setPosition(deathPos);
 
-										// Wyrzucamy magnes mocno w górê
 										mag.velocity = { 0.f, -800.f };
 
 										expOrbs.push_back(mag);
@@ -3261,28 +2976,24 @@ int main() {
 									expOrbs.push_back(orb);
 								}
 								else {
-									// Odrzut (opcjonalny)
 									en.shape.move(p.velocity * dt * 0.5f);
 								}
 
-								// --- FLASK (HOLY WATER) ---
-								// Jeœli fiolka trafi wroga, musi pêkn¹æ i stworzyæ strefê!
 								if (p.wId == HOLY_WATER) {
 									DamageZone z;
 									z.wId = HOLY_WATER;
 									z.maxLifeTime = 3.0f * pStats.duration;
-									z.damage = p.damage; // Obra¿enia strefy takie same jak pocisku
+									z.damage = p.damage;
 									float r = 60.f * pStats.area;
 									z.shape.setRadius(r);
 									z.shape.setFillColor(sf::Color(0, 0, 255, 100));
 									z.shape.setOrigin({ r, r });
-									z.shape.setPosition(p.shape.getPosition()); // Strefa w miejscu trafienia wroga
+									z.shape.setPosition(p.shape.getPosition());
 									zones.push_back(z);
 
-									dead = true; // Natychmiastowe zniszczenie pocisku
-									break;       // Przerywamy pêtlê wrogów dla tego pocisku (bo ju¿ nie istnieje)
+									dead = true;
+									break;
 								}
-								// ----------------------------------
 
 								if (p.pierceLeft > 0) p.pierceLeft--;
 								else { dead = true; break; }
@@ -3292,7 +3003,6 @@ int main() {
 					if (dead) projectiles.erase(projectiles.begin() + i); else i++;
 				}
 
-				// 5. STREFY OBRA¯EÑ (Garlic, Holy Water)
 				for (size_t i = 0; i < zones.size();) {
 					DamageZone& z = zones[i];
 					z.lifeTime += dt; z.tickTimer += dt;
@@ -3310,13 +3020,11 @@ int main() {
 									garlicHitSound.setPitch(pi);
 									garlicHitSound.play();
 
-									hitSoundPlayed = true; // Zablokuj dŸwiêk dla reszty wrogów w tej klatce
+									hitSoundPlayed = true;
 								}
 
-								// 1. ZADAJ OBRA¯ENIA
 								en.hp -= z.damage;
 
-								// 2. SPRAWD CZY UMAR£
 								if (en.hp <= 0.f) {
 									killCount++;
 									sf::Vector2f deathPos = en.shape.getPosition();
@@ -3347,7 +3055,6 @@ int main() {
 					if (z.lifeTime > z.maxLifeTime) zones.erase(zones.begin() + i); else i++;
 				}
 
-				// 6. RUCH WROGÓW
 				for (size_t i = 0; i < enemies.size();) {
 					if (isDying) {
 						i++;
@@ -3355,7 +3062,6 @@ int main() {
 					}
 					if (enemies[i].shape.getPosition().x < -10000) { enemies.erase(enemies.begin() + i); continue; }
 
-					// Celujemy w hitbox
 					sf::Vector2f dir = normalize(hitbox.getPosition() - enemies[i].shape.getPosition());
 
 					if (hitbox.getPosition().x < enemies[i].shape.getPosition().x) enemies[i].velocity.x = -150.f;
@@ -3364,17 +3070,14 @@ int main() {
 					enemies[i].velocity.y += baseGravity * dt;
 					enemies[i].shape.move(enemies[i].velocity * dt);
 
-					// Domyœlne wartoœci dla zwyk³ych wrogów (Szczur/Ochrona)
-					float enemyBottomOffset = 25.f; // Po³owa wysokoœci wroga
-					float flyHeight = 0.f;          // Ile nad ziemi¹ ma wisieæ
+					float enemyBottomOffset = 25.f;
+					float flyHeight = 0.f;
 
-					// Jeœli to Boss, zmieniamy parametry
 					if (enemies[i].isBoss) {
 						enemyBottomOffset = 0.f;
-						flyHeight = 50.f; 
+						flyHeight = 50.f;
 					}
 
-					// Sprawdzamy kolizjê z "wirtualn¹ pod³og¹" (prawdziwa ziemia minus wysokoœæ latania)
 					if (enemies[i].shape.getPosition().y + enemyBottomOffset > ground.getPosition().y - flyHeight) {
 						enemies[i].shape.setPosition({
 							enemies[i].shape.getPosition().x,
@@ -3382,47 +3085,40 @@ int main() {
 						enemies[i].velocity.y = 0.f;
 					}
 
-					// ZMIANA: Obs³uga obra¿eñ i œmierci
 					if (enemies[i].shape.getGlobalBounds().findIntersection(hitbox.getGlobalBounds()) && !isDying) {
 
-						float dmg = 1.0f; // Domyœlne obra¿enia (Szczur)
+						float dmg = 1.0f;
 
-						// --- SYSTEM OBRA¯EÑ WED£UG TYPU WROGA ---
 						if (enemies[i].isBoss) {
-							dmg = 100.0f; // Boss
+							dmg = 100.0f;
 							bossHitSound.play();
 						}
 						else if (enemies[i].maxHp == 100.0f) {
-							dmg = 5.0f;   // Enemy 3 (Egzamin)
+							dmg = 5.0f;
 							hurtSound.play();
 						}
 						else if (enemies[i].maxHp == 15.0f) {
-							dmg = 3.0f;   // Enemy 2 (Ochrona)
+							dmg = 3.0f;
 							hurtSound.play();
 						}
 						else {
-							dmg = 1.0f;   // Enemy 1 (Szczur)
+							dmg = 1.0f;
 							hurtSound.play();
 						}
 
-						// Odejmujemy pancerz gracza
 						if (pStats.armor > 0) dmg = dmg - (int)pStats.armor;
 
-						// Minimalne obra¿enia to zawsze 0.1 (¿eby pancerz nie dawa³ nieœmiertelnoœci)
 						if (dmg < 0.1f) dmg = 0.1f;
 
 						currentHp -= dmg;
 
-						// Logika usuwania wroga
 						if (!enemies[i].isBoss) {
-							// Zwyk³y wróg znika po trafieniu
 							enemies.erase(enemies.begin() + i);
 						}
 						else {
 							i++;
 						}
 
-						// Obs³uga œmierci gracza
 						if (currentHp <= 0) {
 							isDying = true;
 							isHurt = false;
@@ -3438,15 +3134,12 @@ int main() {
 					}
 				}
 
-				// 7. EXP ORBS
 				if (activeMagnetTimer > 0.0f) {
 					activeMagnetTimer -= dt;
 				}
 
 				for (size_t i = 0; i < expOrbs.size();) {
 
-					// --- POPRAWKA: BLOKADA ANIMACJI DLA MAGNESU ---
-					// Animujemy tylko wtedy, gdy to NIE jest magnes (!isMagnet)
 					if (!expOrbs[i].isMagnet) {
 						expOrbs[i].animTimer += dt;
 						if (expOrbs[i].animTimer >= 0.1f) {
@@ -3455,12 +3148,9 @@ int main() {
 							expOrbs[i].sprite.setTextureRect(sf::IntRect({ expOrbs[i].currentFrame * 16, 0 }, { 16, 16 }));
 						}
 					}
-					// ---------------------------------------------
 
-					// --- B. LOGIKA PRZYCI¥GANIA ---
 					float currentMagnetRange = pStats.magnet;
 
-					// Jeœli aktywny super-magnes, zasiêg jest ogromny (ca³a mapa)
 					if (activeMagnetTimer > 0.0f) {
 						currentMagnetRange = 999999.0f;
 					}
@@ -3476,38 +3166,32 @@ int main() {
 						expOrbs[i].isOnGround = false;
 					}
 					else if (!expOrbs[i].isOnGround) {
-						expOrbs[i].velocity.y += 1500.f * dt; // Grawitacja
+						expOrbs[i].velocity.y += 1500.f * dt;
 					}
 
 					expOrbs[i].sprite.move(expOrbs[i].velocity * dt);
 
-					// Kolizja z ziemi¹
 					if (expOrbs[i].sprite.getPosition().y + 5.f > ground.getPosition().y) {
 						expOrbs[i].sprite.setPosition({ expOrbs[i].sprite.getPosition().x, ground.getPosition().y - 5.f });
 						expOrbs[i].velocity.y = 0.f; expOrbs[i].velocity.x = 0.f; expOrbs[i].isOnGround = true;
 					}
 
-					// --- C. PODNOSZENIE ---
 					if (expOrbs[i].sprite.getGlobalBounds().findIntersection(hitbox.getGlobalBounds())) {
 
-						// SPRAWDZAMY CZY TO MAGNES CZY XP
 						if (expOrbs[i].isMagnet) {
-							// --- EFEKT MAGNESU ---
-							activeMagnetTimer = 3.0f; // Aktywuj na 3 sekundy
+							activeMagnetTimer = 3.0f;
 							magnetsCollected++;
 
 							levelUpSound.setPitch(2.0f);
 							levelUpSound.play();
 						}
 						else {
-							// --- ZWYK£Y XP ---
 							float randomPitch = 0.8f + (float)(rand() % 40) / 100.f;
 							expSound.setPitch(randomPitch);
 							expSound.play();
 
 							exp += expOrbs[i].value;
 
-							// Sprawdzanie Level Up
 							if (exp >= nextExp) {
 								levelUpSound.setPitch(1.0f);
 								levelUpSound.play();
@@ -3515,7 +3199,6 @@ int main() {
 								nextExp = (int)(nextExp * 1.2f);
 								level++;
 
-								// GENEROWANIE KART LEVEL UP
 								upgradeCards.clear();
 
 								std::vector<std::pair<int, int>> pool;
@@ -3570,7 +3253,7 @@ int main() {
 									bool isUp = false;
 									int nextLvl = 1;
 
-									if (type == 0) { // --- BROÑ ---
+									if (type == 0) {
 										titleStr = weaponDB[idx].name;
 										col = weaponDB[idx].color;
 										for (auto& w : weaponInventory) {
@@ -3584,7 +3267,7 @@ int main() {
 										if (levelIndex < (int)weaponDB[idx].levels.size()) descStr = weaponDB[idx].levels[levelIndex].description;
 										else descStr = "Uzyskano maksymalny poziom";
 									}
-									else { // Pasywka
+									else {
 										titleStr = passiveDB[idx].name;
 										descStr = passiveDB[idx].description;
 										col = passiveDB[idx].color;
@@ -3617,23 +3300,20 @@ int main() {
 						i++;
 					}
 				}
-				// 8. AKTUALIZACJA PORTALI
 				for (auto& p : portals) {
 					p.animTimer += dt;
-					if (p.animTimer >= 0.15f) { // Prêdkoœæ animacji
+					if (p.animTimer >= 0.15f) {
 						p.animTimer = 0.f;
-						p.currentFrame = (p.currentFrame + 1) % 6; // Mamy 6 klatek
+						p.currentFrame = (p.currentFrame + 1) % 6;
 
-						// Przesuwamy okno wyboru klatki o 16 pikseli (szerokoœæ jednej klatki)
 						p.sprite.setTextureRect(sf::IntRect({ p.currentFrame * 32, 0 }, { 32, 32 }));
 					}
 				}
 			}
-			// 9. AKTUALIZACJA ANIMACJI PIORUNÓW
 			for (size_t i = 0; i < lightnings.size(); ) {
 				lightnings[i].animTimer += dt;
 
-				if (lightnings[i].animTimer >= 0.04f) { // szybkoœæ animacji
+				if (lightnings[i].animTimer >= 0.04f) {
 					lightnings[i].animTimer = 0.f;
 					lightnings[i].currentFrame++;
 					if (lightnings[i].currentFrame < 13) {
@@ -3643,7 +3323,6 @@ int main() {
 					}
 
 				}
-				// --- USUWANIE PO ANIMACJI ---
 				if (lightnings[i].currentFrame >= 13) {
 					lightnings.erase(lightnings.begin() + i);
 				}
@@ -3651,36 +3330,24 @@ int main() {
 					++i;
 				}
 			}
-			// 10. --- AKTUALIZACJA ANIMACJI SZALIKA ---
 			for (auto it = szalik.begin(); it != szalik.end(); ) {
 
 				float finalDir = (float)(facingDir * it->side);
 
-				// Pobieramy zapisan¹ wielkoœæ (to jest odpowiednik Twojego stats.area)
 				float currentArea = it->scaleMult;
 
-				// Obliczamy przesuniêcie dynamicznie (matematyka zamiast if-ów)
-				// Dla 1.0 -> 10 + 75 = 85.f
-				// Dla 1.1 -> 10 + 82.5 = 92.5f
-				// Dla 1.5 -> 10 + 112.5 = 122.5f
 				float offset = 10.f + (75.f * currentArea);
 
 				it->sprite.setPosition(player.getPosition() + sf::Vector2f(offset * finalDir, 0.f));
 
 
 
-				// --- ZMIANA TUTAJ ---
-				// Dodajemy "sztuczny" mno¿nik wizualny (np. 1.8f, czyli powiêkszenie o 80%)
-				// scaleMult (wp³yw Candla) nadal dzia³a, ale ca³oœæ jest mno¿ona razy 1.8
 				float visualBoost = 1.4f;
 				float currentScale = 0.125f * it->scaleMult * visualBoost;
-				// --------------------
 
-				// Aplikujemy skalê (z minusem dla odwrócenia)
 				if (finalDir < 0) it->sprite.setScale({ -currentScale, currentScale });
 				else it->sprite.setScale({ currentScale, currentScale });
 
-				// C. Przewijanie klatek (bez zmian)
 				it->animTimer += dt;
 				if (it->animTimer >= 0.08f) {
 					it->animTimer = 0.f;
@@ -3702,11 +3369,9 @@ int main() {
 					++it;
 				}
 			}
-			// --- Aktualizacja animacji wrogów ---
 
 			for (size_t i = 0; i < Ochrona.size(); ) {
 				auto& w = Ochrona[i];
-				// 1. ZnajdŸ w³aœciciela (hitbox) po ID
 				bool foundOwner = false;
 				sf::Vector2f targetPos;
 
@@ -3717,25 +3382,19 @@ int main() {
 						break;
 					}
 				}
-				// Jeœli hitbox nie istnieje (wróg zgin¹³), usuñ animacjê
 				if (!foundOwner) {
 					Ochrona.erase(Ochrona.begin() + i);
 					continue;
 				}
 
-				// 2. Aktualizacja pozycji
 				w.sprite.setPosition(targetPos);
-				// 3. OBRACANIE W STRONÊ GRACZA (FLIP)
-				// Jeœli gracz jest po lewej stronie wroga
 				if (player.getPosition().x < targetPos.x) {
-					w.sprite.setScale({ -2.f, 2.f }); // Odwróæ w poziomie (minus na X)
+					w.sprite.setScale({ -2.f, 2.f });
 				}
 				else {
-					w.sprite.setScale({ 2.f, 2.f });  // Normalna skala (patrzy w prawo)
+					w.sprite.setScale({ 2.f, 2.f });
 				}
-				// 4. ANIMACJA (ZWOLNIONA)
 				w.animTimer += dt;
-				// ZMIANA: Zwiêkszono z 0.04f na 0.12f (im wiêcej, tym wolniej)
 				if (w.animTimer >= 0.12f) {
 					w.animTimer = 0.f;
 					w.currentFrame++;
@@ -3751,7 +3410,6 @@ int main() {
 
 			for (size_t i = 0; i < Szczur.size(); ) {
 				auto& w2 = Szczur[i];
-				// 1. ZnajdŸ w³aœciciela (hitbox) po ID
 				bool foundOwner = false;
 				sf::Vector2f targetPos;
 				for (const auto& en : enemies) {
@@ -3761,25 +3419,19 @@ int main() {
 						break;
 					}
 				}
-				// Jeœli hitbox nie istnieje (wróg zgin¹³), usuñ animacjê
 				if (!foundOwner) {
 					Szczur.erase(Szczur.begin() + i);
 					continue;
 				}
 
-				// 2. Aktualizacja pozycji
 				w2.sprite.setPosition(targetPos);
-				// 3. OBRACANIE W STRONÊ GRACZA (FLIP)
-				// Jeœli gracz jest po lewej stronie wroga
 				if (player.getPosition().x < targetPos.x) {
-					w2.sprite.setScale({ -2.f, 2.f }); // Odwróæ w poziomie (minus na X)
+					w2.sprite.setScale({ -2.f, 2.f });
 				}
 				else {
-					w2.sprite.setScale({ 2.0f, 2.0f });  // Normalna skala (patrzy w prawo)
+					w2.sprite.setScale({ 2.0f, 2.0f });
 				}
-				// 4. ANIMACJA (ZWOLNIONA)
 				w2.animTimer += dt;
-				// ZMIANA: Zwiêkszono z 0.04f na 0.12f (im wiêcej, tym wolniej)
 				if (w2.animTimer >= 0.12f) {
 					w2.animTimer = 0.f;
 					w2.currentFrame++;
@@ -3794,11 +3446,9 @@ int main() {
 				i++;
 			}
 
-			// --- Aktualizacja animacji Egzaminu ---
 			for (size_t i = 0; i < Egzamin.size(); ) {
 				auto& w3 = Egzamin[i];
 
-				// 1. ZnajdŸ w³aœciciela (hitbox) po ID
 				bool foundOwner = false;
 				sf::Vector2f targetPos;
 				for (const auto& en : enemies) {
@@ -3808,44 +3458,37 @@ int main() {
 						break;
 					}
 				}
-				// Jeœli hitbox nie istnieje (wróg zgin¹³), usuñ animacjê
 				if (!foundOwner) {
 					Egzamin.erase(Egzamin.begin() + i);
 					continue;
 				}
 
-				// 2. Aktualizacja pozycji
 				w3.sprite.setPosition(targetPos);
 
-				// 3. OBRACANIE W STRONÊ GRACZA (FLIP)
-				// U¿ywamy skali 2.5f (takiej samej jak w konstruktorze)
 				float scaleVal = 2.5f;
 
 				if (player.getPosition().x < targetPos.x) {
-					w3.sprite.setScale({ -scaleVal, scaleVal }); // Odwróæ w poziomie
+					w3.sprite.setScale({ -scaleVal, scaleVal });
 				}
 				else {
-					w3.sprite.setScale({ scaleVal, scaleVal });  // Normalna skala
+					w3.sprite.setScale({ scaleVal, scaleVal });
 				}
 
-				// 4. PRZEWIJANIE KLATEK
 				w3.animTimer += dt;
-				if (w3.animTimer >= 0.12f) { // Prêdkoœæ animacji
+				if (w3.animTimer >= 0.12f) {
 					w3.animTimer = 0.f;
 					w3.currentFrame++;
 
-					if (w3.currentFrame >= 5) { // Masz 5 klatek (0,1,2,3,4)
+					if (w3.currentFrame >= 5) {
 						w3.currentFrame = 0;
 					}
 
-					// Przesuwamy okno o 38 pikseli
 					w3.sprite.setTextureRect(
 						sf::IntRect({ w3.currentFrame * 38, 0 }, { 38, 38 }));
 				}
 				i++;
 			}
 
-			// --- Aktualizacja animacji BOSSA (64x64) ---
 			for (size_t i = 0; i < Boss.size(); ) {
 				auto& b = Boss[i];
 
@@ -3859,46 +3502,36 @@ int main() {
 					}
 				}
 
-				// Jeœli Boss umar³, usuñ animacjê
 				if (!foundOwner) {
 					Boss.erase(Boss.begin() + i);
 					continue;
 				}
 
-				// Aktualizacja pozycji
 				b.sprite.setPosition(targetPos);
 
-				// 3. OBRACANIE W STRONÊ GRACZA (FLIP)
 				float scaleVal = 4.0f;
 
 				if (player.getPosition().x < targetPos.x) {
-					// Jeœli gracz jest po lewej:
-					// USUN¥£EM MINUS TUTAJ (by³o -scaleVal, jest scaleVal)
 					b.sprite.setScale({ scaleVal, scaleVal });
 				}
 				else {
-					// Jeœli gracz jest po prawej:
-					// DODA£EM MINUS TUTAJ (by³o scaleVal, jest -scaleVal)
 					b.sprite.setScale({ -scaleVal, scaleVal });
 				}
 
-				// Przewijanie klatek
 				b.animTimer += dt;
-				if (b.animTimer >= 0.15f) { // Boss mo¿e machaæ skrzyd³ami wolniej/dostojniej
+				if (b.animTimer >= 0.15f) {
 					b.animTimer = 0.f;
 					b.currentFrame++;
 
-					if (b.currentFrame >= 5) { // 5 klatek
+					if (b.currentFrame >= 5) {
 						b.currentFrame = 0;
 					}
 
-					// Przesuwamy okno o 64 piksele
 					b.sprite.setTextureRect(
 						sf::IntRect({ b.currentFrame * 64, 0 }, { 64, 64 }));
 				}
 				i++;
 			}
-			// --- RYSOWANIE ---
 			window.clear(sf::Color(20, 20, 20));
 
 			if (gameStarted) {
@@ -3910,7 +3543,6 @@ int main() {
 				window.draw(background);
 				window.draw(ground);
 
-				//Czy blizez tej lini tym dalej jest rysowane
 				for (auto& p : portals) window.draw(p.sprite);
 				for (auto& z : zones) window.draw(z.shape);
 				for (auto& l : lightnings) window.draw(l.sprite);
@@ -3940,26 +3572,17 @@ int main() {
 				window.setView(window.getDefaultView());
 				window.draw(uiBar);
 
-				// RYSOWANIE PASKA BOSSA
 				for (const auto& en : enemies) {
 					if (en.isBoss) {
-						// Oblicz procent ¿ycia
 						float hpPercent = en.hp / en.maxHp;
 						if (hpPercent < 0.f) hpPercent = 0.f;
 
-						// Aktualizuj szerokoœæ paska
-						// Pasek ma max 800 szerokoœci. Musimy skalowaæ wzglêdem œrodka.
 						bossBarFill.setSize(sf::Vector2f(800.f * hpPercent, 30.f));
 
-						// Poniewa¿ setOrigin jest na œrodku, skalowanie dzia³a symetrycznie, 
-						// ale SFML skaluje od origin. ¯eby pasek mala³ do lewej, musimy zmieniæ logikê origin.
-						// Uproœæmy: narysujemy t³o, a potem pasek ¿ycia na nim.
-
-						// Rysuj
 						window.draw(bossBarBg);
 						window.draw(bossBarFill);
 						window.draw(bossNameText);
-						break; // Mamy tylko jednego bossa, nie szukaj dalej
+						break;
 					}
 				}
 
