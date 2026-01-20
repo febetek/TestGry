@@ -1,3 +1,6 @@
+W sprawozdaniu znajduje się link do pobrania gotowej wersji release
+
+
 Instrukcja Uruchomienia
 
 1. Przygotowanie środowiska
