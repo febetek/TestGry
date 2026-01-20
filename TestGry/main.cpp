@@ -598,6 +598,7 @@ void keyBindingsFunction(
 						if (isFullscreen) window.create(VideoMode::getDesktopMode(), "AGH survival", Style::Default, State::Fullscreen);
 						else window.create(VideoMode({ winWidth, winHeight }), "AGH survival", Style::Default, State::Windowed);
 						window.setFramerateLimit(140);
+
 					}
 					// warunek, aby gra nie reagowa³a na klikniêcie okreœlonych klawiszy przy przypisywaniu klawiszy
 					else if (
@@ -1449,6 +1450,9 @@ int main() {
 						if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "AGH survival", sf::Style::Default, sf::State::Fullscreen);
 						else window.create(sf::VideoMode({ windowWidth, windowHeight }), "AGH survival", sf::Style::Default, sf::State::Windowed);
 						window.setFramerateLimit(140);
+						if (customCursor) {
+							window.setMouseCursor(customCursor.value());
+						}
 					}
 				}
 				// ZMIANA: Obs³uga klikniêcia jako ZDARZENIE (raz na klik), a nie stan
@@ -1512,6 +1516,9 @@ int main() {
 																if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "AGH survival", sf::Style::Default, sf::State::Fullscreen);
 																else window.create(sf::VideoMode({ windowWidth, windowHeight }), "AGH survival", sf::Style::Default, sf::State::Windowed);
 																window.setFramerateLimit(140);
+																if (customCursor) {
+																	window.setMouseCursor(customCursor.value());
+																}
 															}
 														}
 														if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
@@ -1710,6 +1717,9 @@ int main() {
 																if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "AGH survival", sf::Style::Default, sf::State::Fullscreen);
 																else window.create(sf::VideoMode({ windowWidth, windowHeight }), "AGH survival", sf::Style::Default, sf::State::Windowed);
 																window.setFramerateLimit(140);
+																if (customCursor) {
+																	window.setMouseCursor(customCursor.value());
+																}
 															}
 														}
 														else if (const auto* mouseRel = event->getIf<sf::Event::MouseButtonReleased>())
@@ -1917,6 +1927,9 @@ int main() {
 																if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "AGH survival", sf::Style::Default, sf::State::Fullscreen);
 																else window.create(sf::VideoMode({ windowWidth, windowHeight }), "AGH survival", sf::Style::Default, sf::State::Windowed);
 																window.setFramerateLimit(140);
+																if (customCursor) {
+																	window.setMouseCursor(customCursor.value());
+																}
 															}
 														}
 														if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>())
@@ -1934,6 +1947,9 @@ int main() {
 																		window.close();
 																		window.create(VideoMode::getDesktopMode(), "AGH survival", Style::Default, sf::State::Fullscreen);
 																		window.setFramerateLimit(140);
+																		if (customCursor) {
+																			window.setMouseCursor(customCursor.value());
+																		}
 																	}
 																	else {}
 																}
@@ -1948,6 +1964,9 @@ int main() {
 																		window.close();
 																		window.create(VideoMode({ windowWidth, windowHeight }), "AGH survival", Style::Default, sf::State::Windowed);
 																		window.setFramerateLimit(140);
+																		if (customCursor) {
+																			window.setMouseCursor(customCursor.value());
+																		}
 																	}
 																	else {}
 																}
@@ -2005,6 +2024,9 @@ int main() {
 											if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "AGH survival", sf::Style::Default, sf::State::Fullscreen);
 											else window.create(sf::VideoMode({ windowWidth, windowHeight }), "AGH survival", sf::Style::Default, sf::State::Windowed);
 											window.setFramerateLimit(140);
+											if (customCursor) {
+												window.setMouseCursor(customCursor.value());
+											}
 										}
 									}
 
@@ -2202,6 +2224,9 @@ int main() {
 						if (isFullscreen) window.create(sf::VideoMode::getDesktopMode(), "AGH survival", sf::Style::Default, sf::State::Fullscreen);        // nazwa na pasku zadañ
 						else window.create(sf::VideoMode({ windowWidth, windowHeight }), "AGH survival", sf::Style::Default, sf::State::Windowed);          //
 						window.setFramerateLimit(140);
+						if (customCursor) {
+							window.setMouseCursor(customCursor.value());
+						}
 					}
 				}
 				// ZMIANA: Obs³uga klikniêcia jako ZDARZENIE wewn¹trz pêtli pollEvent
@@ -2280,6 +2305,9 @@ int main() {
 						else window.create(sf::VideoMode({ windowWidth, windowHeight }), "AGH survival", sf::Style::Default, sf::State::Windowed);
 						window.setFramerateLimit(140);
 						dtClock.restart();
+						if (customCursor) {
+							window.setMouseCursor(customCursor.value());
+						}
 					}
 					if (key->scancode == sf::Keyboard::Scancode::Escape && !isGameOver) {
 						isPaused = !isPaused;
@@ -2502,7 +2530,7 @@ int main() {
 			else if (!isPaused) {
 				gameTime += dt;
 				// KONIEC GRY PO 6 MINUTACH ---
-				if (gameTime >= 360.0f) {
+				if (gameTime >= 300.0f) {
 					isGameOver = true;
 
 					// Zatrzymujemy muzykê i grê
@@ -2699,12 +2727,12 @@ int main() {
 				player.setPosition(hitbox.getPosition());
 
 				// --- SPAWNOWANIE PRZECIWNIKÓW  ---
-				float spawnDelay = 1.0f - (gameTime * 0.0031f);
+				float spawnDelay = 1.0f - (gameTime * 0.0039f);
 				if (spawnDelay < 0.06f) spawnDelay = 0.06f;
 
 				if (spawnClock.getElapsedTime().asSeconds() > spawnDelay) {
 						// --- KOD BOSSA ---
-						if (!bossSpawned && gameTime >= 270.f) {// 4.5minuty
+						if (!bossSpawned && gameTime >= 210.f) {// 3.5minuty
 							Enemy boss;
 							boss.id = nextEnemyId++;
 							boss.hp = 3000.0f;
@@ -2752,7 +2780,7 @@ int main() {
 					int enemyType = 0; // 0 = S³aby (Domyœlny)
 					int randVal = rand() % 100; // Losowa liczba 0-99
 
-					if (gameTime >= 300.f) {
+					if (gameTime >= 240.f) {  // Po 4 minutach
 						// 0% S³abych
 						// 60% Œrednich (Ochrona)
 						// 40% Mocnych (Egzamin)
@@ -2763,13 +2791,13 @@ int main() {
 							enemyType = 2; // Mocny
 						}
 					}
-					else if (gameTime >= 180.f) { // Po 3 minutach
+					else if (gameTime >= 120.f) { // Po 2 minutach
 						// 50% S³aby, 30% Œredni, 20% Silny
 						if (randVal < 50) enemyType = 0;
 						else if (randVal < 80) enemyType = 1;
 						else enemyType = 2;
 					}
-					else if (gameTime >= 90.f) { // Po 90 sekundach
+					else if (gameTime >= 30.f) { // Po 30 sekundach
 						// 60% S³aby, 40% Œredni
 						if (randVal < 60) enemyType = 0;
 						else enemyType = 1;
@@ -2787,7 +2815,7 @@ int main() {
 						Szczur.emplace_back(szczurTexture, e.shape.getPosition());
 						Szczur.back().targetId = e.id;
 					}
-					else if (enemyType == 1) { // Œredni (od 2 min)
+					else if (enemyType == 1) { // Œredni
 						e.hp = 25.0f; e.maxHp = 25.0f;
 						e.shape.setRadius(30.f);
 						e.shape.setFillColor(sf::Color::Transparent);
@@ -2795,7 +2823,7 @@ int main() {
 						Ochrona.back().targetId = e.id;
 						// Opcjonalnie wolniejszy? (logika prêdkoœci jest ni¿ej w pêtli ruchu)
 					}
-					else if (enemyType == 2) { // Twardy (od 4 min)
+					else if (enemyType == 2) { // Twardy
 						e.hp = 60.0f; e.maxHp = 60.0f;
 						e.shape.setRadius(35.f);
 						e.shape.setFillColor(sf::Color::Transparent);
